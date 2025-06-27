@@ -119,7 +119,7 @@ export const Competition = mongoose.model<ICompetition>(
 );
 
 // JWT middleware to extract username from token
-const authenticateToken = (req: any, res: any, next: any) => {
+export const authenticateInternalToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
@@ -142,18 +142,21 @@ const authenticateToken = (req: any, res: any, next: any) => {
 const app = express();
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://mongo:27017/competition-service')
+mongoose
+  .connect(
+    process.env.MONGODB_URI || "mongodb://mongo:27017/competition-service"
+  )
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log("Connected to MongoDB");
   })
   .catch((error) => {
-    console.error('MongoDB connection error:', error);
+    console.error("MongoDB connection error:", error);
     process.exit(1);
   });
 
 app.use(express.json());
 
-app.post("/", authenticateToken, async (req, res) => {
+app.post("/", authenticateInternalToken, async (req, res) => {
   try {
     const competitionData: ICompetitionInput = req.body;
     const competition = new Competition({

@@ -53,5 +53,21 @@ services:
     depends_on:
       - mongo
 
+  submission-service:
+    build:
+      context: ./submission-service
+      dockerfile: ../shared/Dockerfile.dev
+    container_name: submission-service
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./submission-service/.env
+      - .env
+    volumes:
+      - ./submission-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - mongo
+
 volumes:
   mongo-data:
