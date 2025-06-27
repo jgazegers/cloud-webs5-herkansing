@@ -1,0 +1,27 @@
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile.dev
+    container_name: user-service
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./user-service/.env
+      - .env
+    volumes:
+      - ./user-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
