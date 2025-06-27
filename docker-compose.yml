@@ -37,5 +37,21 @@ services:
     depends_on:
       - mongo
 
+  competition-service:
+    build:
+      context: ./competition-service
+      dockerfile: ../shared/Dockerfile.dev
+    container_name: competition-service
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./competition-service/.env
+      - .env
+    volumes:
+      - ./competition-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - mongo
+
 volumes:
   mongo-data:

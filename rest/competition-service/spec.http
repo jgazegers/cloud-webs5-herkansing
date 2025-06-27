@@ -1,0 +1,140 @@
+### API GATEWAY ROUTES (Recommended for production)
+### These routes go through the API Gateway which:
+### 1. Validates external JWT tokens (JWT_SECRET_EXTERNAL)
+### 2. Exchanges them for internal JWT tokens (JWT_SECRET_INTERNAL)
+### 3. Forwards requests to the competition service
+
+### Create a new competition via API Gateway (requires external JWT token)
+POST http://localhost:3000/api/competitions
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRlc3QgTWNUZXN0IiwiaWF0IjoxNzUxMDMwNjQ0LCJleHAiOjE3NTEwMzQyNDR9.hv24K5opaCD-f_ZmmV_HtA1b0B3fLddfWAz4CUgORk4
+
+{
+    "title": "Photo Hunt Challenge",
+    "description": "Find and photograph the hidden landmark in the city center. First to submit wins!",
+    "targetImage": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "location": {
+        "name": "Central Park",
+        "coordinates": {
+            "latitude": 40.7829,
+            "longitude": -73.9654
+        }
+    },
+    "startDate": "2025-06-28T10:00:00.000Z",
+    "endDate": "2025-06-28T18:00:00.000Z"
+}
+
+###
+### DIRECT SERVICE ACCESS (For development/testing only)
+### These routes bypass the API Gateway and go directly to the service
+### Requires internal JWT tokens (JWT_SECRET_INTERNAL)
+
+### Create a new competition (direct access - requires internal JWT token)
+POST http://localhost:3002
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRlc3QgTWNUZXN0IiwiaWF0IjoxNzUxMDMwMDUwLCJleHAiOjE3NTEwMzM2NTB9.8SPeych6dtUXWQ8qRM9LDV1t2SbwWUQk8GgMspb1EtQ
+
+{
+    "title": "Photo Hunt Challenge",
+    "description": "Find and photograph the hidden landmark in the city center. First to submit wins!",
+    "targetImage": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "location": {
+        "name": "Central Park",
+        "coordinates": {
+            "latitude": 40.7829,
+            "longitude": -73.9654
+        }
+    },
+    "startDate": "2025-06-28T10:00:00.000Z",
+    "endDate": "2025-06-28T18:00:00.000Z"
+}
+
+### Create competition with detailed location
+POST http://localhost:3002/competitions
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+    "title": "Architecture Photography Contest",
+    "description": "Capture the most creative angle of the historic building. Show your artistic vision!",
+    "targetImage": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "location": {
+        "name": "Amsterdam Museum District",
+        "coordinates": {
+            "latitude": 52.3676,
+            "longitude": 4.9041
+        }
+    },
+    "startDate": "2025-06-29T09:00:00.000Z",
+    "endDate": "2025-06-29T17:00:00.000Z"
+}
+
+### Create competition with invalid data (missing required fields)
+POST http://localhost:3002/competitions
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+    "title": "Incomplete Competition",
+    "description": "This should fail validation"
+    // Missing required fields: targetImage, location, startDate, endDate
+}
+
+### Create competition without authentication (should fail)
+POST http://localhost:3002/competitions
+Content-Type: application/json
+
+{
+    "title": "Unauthorized Competition",
+    "description": "This should fail because no JWT token is provided",
+    "targetImage": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "location": {
+        "name": "Test Location",
+        "coordinates": {
+            "latitude": 52.3676,
+            "longitude": 4.9041
+        }
+    },
+    "startDate": "2025-06-28T10:00:00.000Z",
+    "endDate": "2025-06-28T18:00:00.000Z"
+}
+
+### Create competition with invalid date range (endDate before startDate)
+POST http://localhost:3002/competitions
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+    "title": "Invalid Date Range Competition",
+    "description": "This should fail because end date is before start date",
+    "targetImage": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "location": {
+        "name": "Test Location",
+        "coordinates": {
+            "latitude": 52.3676,
+            "longitude": 4.9041
+        }
+    },
+    "startDate": "2025-06-28T18:00:00.000Z",
+    "endDate": "2025-06-28T10:00:00.000Z"
+}
+
+### Create competition with invalid coordinates
+POST http://localhost:3002/competitions
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+    "title": "Invalid Coordinates Competition",
+    "description": "This should fail because of invalid latitude/longitude",
+    "targetImage": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "location": {
+        "name": "Invalid Location",
+        "coordinates": {
+            "latitude": 999,
+            "longitude": -999
+        }
+    },
+    "startDate": "2025-06-28T10:00:00.000Z",
+    "endDate": "2025-06-28T18:00:00.000Z"
+}
