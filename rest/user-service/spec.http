@@ -1,6 +1,6 @@
 
 ### Nieuwe gebruiker aanmaken
-POST http://localhost:3000/register
+POST http://localhost:3000/api/users/register
 Content-Type: application/json
 
 {
@@ -10,8 +10,17 @@ Content-Type: application/json
 
 ###
 
+### Nieuwe gebruiker aanmaken
+POST http://localhost:3001/register
+Content-Type: application/json
+
+{
+    "username": "Test McTest",
+    "password": "SecurePassword"
+}
+
 ### Login
-POST http://localhost:3000/login
+POST http://localhost:3000/api/users/login
 Content-Type: application/json
 
 {

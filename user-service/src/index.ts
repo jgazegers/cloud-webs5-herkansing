@@ -61,7 +61,7 @@ const startServer = async () => {
         return;
       }
 
-      const jwtSecret = process.env.JWT_SECRET;
+      const jwtSecret = process.env.JWT_SECRET_EXTERNAL;
       if (jwtSecret === undefined) {
         res.status(500).json({ error: "No JWT secret found" });
         return;
@@ -78,7 +78,7 @@ const startServer = async () => {
     }
   });
 
-  app.listen(3000, () => {
+  app.listen(3001, () => {
     console.log("Users service connected");
   });
 };

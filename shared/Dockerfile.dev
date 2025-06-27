@@ -17,5 +17,5 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# Use nodemon with ts-node to watch and reload on changes
+# Use nodemon with tsx to watch and reload on changes
 CMD ["nodemon", "--watch", "src", "--exec", "tsx", "src/index.ts"]
