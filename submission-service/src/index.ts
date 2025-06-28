@@ -1,15 +1,12 @@
 import express from "express";
 import { connectToDatabase } from "./config/database";
-import { EventService } from "./services/eventService";
+import { eventService } from "./services/eventServiceSingleton";
 import submissionRoutes from "./routes/submissionRoutes";
 import "./types"; // Import types to ensure global declarations are loaded
 
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3003;
-
-// Initialize event service
-const eventService = new EventService();
 
 async function startServer(): Promise<void> {
   try {

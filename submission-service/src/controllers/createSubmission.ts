@@ -3,6 +3,7 @@ import fs from "fs";
 import { Submission, ValidCompetition } from "../models";
 import { getImageInfo, fileToBase64, areImagesIdentical } from "../utils";
 import { MAX_IMAGE_SIZE } from "../middleware";
+import { eventService } from "../services/eventServiceSingleton";
 
 export const createSubmission = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -75,6 +76,24 @@ export const createSubmission = async (req: Request, res: Response): Promise<voi
     });
 
     await submission.save();
+
+    // Publish submission created event
+    try {
+      await eventService.publishSubmissionCreated({
+        submission: {
+          _id: submission._id.toString(),
+          competitionId: submission.competitionId,
+          owner: submission.owner,
+          submissionData: submission.submissionData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Failed to publish submission created event:', error);
+      // Continue with response - don't fail the submission creation
+    }
+
     res.status(201).json({
       ...submission.toObject(),
       competitionTitle: validCompetition.title,

@@ -22,6 +22,17 @@ export interface CompetitionCreatedEvent {
   };
 }
 
+export interface SubmissionCreatedEvent {
+  submission: {
+    _id: string;
+    competitionId: string;
+    owner: string;
+    submissionData: string; // base64 encoded image
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
+
 export class MessageQueue {
   private channelModel: amqp.ChannelModel | null = null;
   private channel: amqp.Channel | null = null;
@@ -40,6 +51,8 @@ export class MessageQueue {
         
         // Declare the exchange for competition events
         await this.channel.assertExchange('competitions', 'topic', { durable: true });
+        // Declare the exchange for submission events
+        await this.channel.assertExchange('submissions', 'topic', { durable: true });
         
         console.log('✅ Connected to RabbitMQ successfully');
         return;
@@ -89,6 +102,22 @@ export class MessageQueue {
     });
 
     console.log('Subscribed to competition events');
+  }
+
+  async publishSubmissionCreated(event: SubmissionCreatedEvent): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Not connected to RabbitMQ');
+    }
+
+    const routingKey = 'submission.created';
+    const message = Buffer.from(JSON.stringify(event));
+
+    this.channel.publish('submissions', routingKey, message, {
+      persistent: true,
+      timestamp: Date.now(),
+    });
+
+    console.log(`Published submission.created event for ID: ${event.submission._id}`);
   }
 
   async close(): Promise<void> {

@@ -1,4 +1,4 @@
-import { MessageQueue, CompetitionCreatedEvent } from "../messageQueue";
+import { MessageQueue, CompetitionCreatedEvent, SubmissionCreatedEvent } from "../messageQueue";
 import { ValidCompetition } from "../models";
 
 export class EventService {
@@ -40,6 +40,15 @@ export class EventService {
         console.error('Error storing competition:', error);
         throw error;
       }
+    }
+  }
+
+  async publishSubmissionCreated(event: SubmissionCreatedEvent): Promise<void> {
+    try {
+      await this.messageQueue.publishSubmissionCreated(event);
+    } catch (error) {
+      console.error('Failed to publish submission created event:', error);
+      // Don't throw - we don't want submission creation to fail if messaging fails
     }
   }
 
