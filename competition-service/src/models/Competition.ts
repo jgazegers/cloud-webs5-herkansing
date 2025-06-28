@@ -99,7 +99,11 @@ const CompetitionSchema: Schema<ICompetition> = new Schema(
 
 // Index for efficient queries
 CompetitionSchema.index({ startDate: 1 });
+CompetitionSchema.index({ endDate: 1 });
+CompetitionSchema.index({ owner: 1 });
+CompetitionSchema.index({ "location.name": "text" }); // For text search on location names
 CompetitionSchema.index({ "location.coordinates": "2dsphere" }); // For geospatial queries
+CompetitionSchema.index({ startDate: 1, endDate: 1 }); // Compound index for date range queries
 
 export const Competition = mongoose.model<ICompetition>(
   "Competition",

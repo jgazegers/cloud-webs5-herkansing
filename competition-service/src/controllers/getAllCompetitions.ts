@@ -4,12 +4,73 @@ import { getImageInfo } from "../utils/imageUtils";
 
 export const getAllCompetitions = async (req: Request, res: Response) => {
   try {
-    const competitions = await Competition.find()
+    // Build filter object based on query parameters
+    const filter: any = {};
+
+    // Filter by location name (case-insensitive partial match)
+    if (req.query.location) {
+      filter["location.name"] = { 
+        $regex: req.query.location as string, 
+        $options: "i" 
+      };
+    }
+
+    // Filter by owner (exact match)
+    if (req.query.owner) {
+      filter.owner = req.query.owner as string;
+    }
+
+    // Filter by date range
+    if (req.query.status) {
+      const now = new Date();
+      const status = req.query.status as string;
+      
+      switch (status) {
+        case "active":
+          // Competitions that are currently running
+          filter.startDate = { $lte: now };
+          filter.endDate = { $gte: now };
+          break;
+        case "upcoming":
+          // Competitions that haven't started yet
+          filter.startDate = { $gt: now };
+          break;
+        case "ended":
+          // Competitions that have ended
+          filter.endDate = { $lt: now };
+          break;
+      }
+    }
+
+    // Custom date range filtering
+    if (req.query.startAfter || req.query.endBefore) {
+      if (req.query.startAfter) {
+        filter.startDate = { 
+          ...filter.startDate,
+          $gte: new Date(req.query.startAfter as string) 
+        };
+      }
+      if (req.query.endBefore) {
+        filter.endDate = { 
+          ...filter.endDate,
+          $lte: new Date(req.query.endBefore as string) 
+        };
+      }
+    }
+
+    const competitions = await Competition.find(filter)
       .select("-__v")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
       totalCompetitions: competitions.length,
+      appliedFilters: {
+        location: req.query.location || null,
+        owner: req.query.owner || null,
+        status: req.query.status || null,
+        startAfter: req.query.startAfter || null,
+        endBefore: req.query.endBefore || null,
+      },
       competitions: competitions.map((competition) => {
         const imageInfo = getImageInfo(competition.targetImage);
         return {

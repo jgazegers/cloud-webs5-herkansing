@@ -45,6 +45,34 @@ Content-Disposition: form-data; name="endDate"
 GET {{apiGatewayUrl}}/api/competitions
 Authorization: Bearer {{submissionOwnerExternalToken}}
 
+### Get competitions filtered by location (case-insensitive partial match)
+GET {{apiGatewayUrl}}/api/competitions?location=park
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Get competitions filtered by owner
+GET {{apiGatewayUrl}}/api/competitions?owner=CompetitionOwner
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Get active competitions (currently running)
+GET {{apiGatewayUrl}}/api/competitions?status=active
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Get upcoming competitions (not started yet)
+GET {{apiGatewayUrl}}/api/competitions?status=upcoming
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Get ended competitions
+GET {{apiGatewayUrl}}/api/competitions?status=ended
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Get competitions with custom date range
+GET {{apiGatewayUrl}}/api/competitions?startAfter=2026-06-01&endBefore=2026-07-01
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Get competitions with multiple filters
+GET {{apiGatewayUrl}}/api/competitions?location=park&status=active&owner=CompetitionOwner
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
 ### Get specific competition by ID
 GET {{apiGatewayUrl}}/api/competitions/{{validCompetitionId}}
 Authorization: Bearer {{submissionOwnerExternalToken}}
