@@ -53,6 +53,20 @@ const ValidCompetitionSchema = new mongoose.Schema<IValidCompetition>(
       type: String,
       required: true,
     },
+    startDate: {
+      type: Date,
+      required: false,
+    },
+    endDate: {
+      type: Date,
+      required: false,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'stopped', 'ended'],
+      default: 'active',
+      required: true,
+    },
     createdAt: {
       type: Date,
       required: true,

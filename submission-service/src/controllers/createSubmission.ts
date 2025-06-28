@@ -48,6 +48,44 @@ export const createSubmission = async (req: Request, res: Response): Promise<voi
       return;
     }
 
+    // Check if competition has ended or been stopped
+    if (validCompetition.status === 'stopped') {
+      res.status(400).json({ 
+        error: "Competition has been stopped by the owner and is no longer accepting submissions." 
+      });
+      return;
+    }
+
+    if (validCompetition.status === 'ended') {
+      res.status(400).json({ 
+        error: "Competition has ended and is no longer accepting submissions." 
+      });
+      return;
+    }
+
+    // Check if competition has naturally ended based on end date
+    if (validCompetition.endDate) {
+      const now = new Date();
+      if (validCompetition.endDate < now) {
+        res.status(400).json({ 
+          error: "Competition has ended and is no longer accepting submissions." 
+        });
+        return;
+      }
+    }
+
+    // Check if competition hasn't started yet
+    if (validCompetition.startDate) {
+      const now = new Date();
+      if (validCompetition.startDate > now) {
+        res.status(400).json({ 
+          error: "Competition has not started yet. Submissions will be accepted starting from " + 
+                 validCompetition.startDate.toISOString() 
+        });
+        return;
+      }
+    }
+
     // Validate and get info from base64 image
     const imageInfo = getImageInfo(base64Image);
     if (!imageInfo) {

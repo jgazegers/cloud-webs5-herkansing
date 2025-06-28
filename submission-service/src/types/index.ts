@@ -18,6 +18,9 @@ export interface IValidCompetition {
   title: string;
   owner: string;
   targetImage: string; // base64 encoded target image
+  startDate?: Date; // Optional start date
+  endDate?: Date; // Optional end date
+  status: 'active' | 'stopped' | 'ended'; // Competition status
   createdAt: Date;
 }
 
@@ -31,7 +34,7 @@ declare global {
   namespace Express {
     interface Request {
       username?: string;
-      file?: any; // Multer file type for uploaded files
+      file?: Express.Multer.File; // Multer file type for uploaded files
     }
   }
 }

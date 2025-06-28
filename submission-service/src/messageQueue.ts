@@ -34,6 +34,13 @@ export interface SubmissionCreatedEvent {
   };
 }
 
+export interface CompetitionStoppedEvent {
+  competitionId: string;
+  title: string;
+  owner: string;
+  stoppedAt: Date;
+}
+
 export interface ComparisonCompletedEvent {
   comparisonResult: {
     _id: string;
@@ -45,6 +52,16 @@ export interface ComparisonCompletedEvent {
     createdAt: Date;
     updatedAt: Date;
   };
+}
+
+export interface WinnerSelectedEvent {
+  competitionId: string;
+  winnerSubmissionId: string;
+  winnerScore: number;
+  winnerOwner: string;
+  competitionTitle: string;
+  submissionDate: Date;
+  selectedAt: Date;
 }
 
 export class MessageQueue {
@@ -90,7 +107,10 @@ export class MessageQueue {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async subscribeToCompetitionEvents(callback: (event: CompetitionCreatedEvent) => Promise<void>): Promise<void> {
+  async subscribeToCompetitionEvents(
+    onCompetitionCreated: (event: CompetitionCreatedEvent) => Promise<void>,
+    onCompetitionStopped: (event: CompetitionStoppedEvent) => Promise<void>
+  ): Promise<void> {
     if (!this.channel) {
       throw new Error('Not connected to RabbitMQ');
     }
@@ -99,25 +119,65 @@ export class MessageQueue {
     const queueName = 'submission-service-competitions';
     await this.channel.assertQueue(queueName, { durable: true });
     
-    // Bind queue to exchange for competition.created events
+    // Bind queue to exchange for competition events
     await this.channel.bindQueue(queueName, 'competitions', 'competition.created');
+    await this.channel.bindQueue(queueName, 'competitions', 'competition.stopped');
 
     // Set up consumer
     await this.channel.consume(queueName, async (msg) => {
       if (msg) {
         try {
-          const event: CompetitionCreatedEvent = JSON.parse(msg.content.toString());
-          await callback(event);
+          const routingKey = msg.fields.routingKey;
+          
+          if (routingKey === 'competition.created') {
+            const event: CompetitionCreatedEvent = JSON.parse(msg.content.toString());
+            await onCompetitionCreated(event);
+            console.log(`Processed competition.created event for ID: ${event.competition._id}`);
+          } else if (routingKey === 'competition.stopped') {
+            const event: CompetitionStoppedEvent = JSON.parse(msg.content.toString());
+            await onCompetitionStopped(event);
+            console.log(`Processed competition.stopped event for ID: ${event.competitionId}`);
+          }
+          
           this.channel!.ack(msg);
-          console.log(`Processed competition.created event for ID: ${event.competition._id}`);
         } catch (error) {
-          console.error('Error processing message:', error);
+          console.error('Error processing competition event:', error);
           this.channel!.nack(msg, false, false); // Don't requeue failed messages
         }
       }
     });
 
-    console.log('Subscribed to competition events');
+    console.log('Subscribed to competition events (created and stopped)');
+  }
+
+  async subscribeToWinnerEvents(callback: (event: WinnerSelectedEvent) => Promise<void>): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Not connected to RabbitMQ');
+    }
+
+    // Create a queue for winner events
+    const queueName = 'submission-service-winners';
+    await this.channel.assertQueue(queueName, { durable: true });
+    
+    // Bind queue to winners exchange
+    await this.channel.bindQueue(queueName, 'winners', 'winner.selected');
+
+    // Set up consumer
+    await this.channel.consume(queueName, async (msg) => {
+      if (msg) {
+        try {
+          const event: WinnerSelectedEvent = JSON.parse(msg.content.toString());
+          await callback(event);
+          this.channel!.ack(msg);
+          console.log(`Processed winner.selected event for competition: ${event.competitionId}`);
+        } catch (error) {
+          console.error('Error processing winner event:', error);
+          this.channel!.nack(msg, false, false); // Don't requeue failed messages
+        }
+      }
+    });
+
+    console.log('Subscribed to winner events');
   }
 
   async publishSubmissionCreated(event: SubmissionCreatedEvent): Promise<void> {
