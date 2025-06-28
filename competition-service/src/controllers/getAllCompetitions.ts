@@ -20,24 +20,61 @@ export const getAllCompetitions = async (req: Request, res: Response) => {
       filter.owner = req.query.owner as string;
     }
 
-    // Filter by date range
+    // Filter by status
     if (req.query.status) {
       const now = new Date();
       const status = req.query.status as string;
       
       switch (status) {
         case "active":
-          // Competitions that are currently running
-          filter.startDate = { $lte: now };
-          filter.endDate = { $gte: now };
+          // Competitions that are currently active (complex logic to handle optional dates)
+          const activeConditions: any[] = [];
+          
+          // 1. Traditional active competitions with both dates
+          activeConditions.push({
+            startDate: { $lte: now },
+            endDate: { $gte: now },
+            status: 'active'
+          });
+          
+          // 2. Competitions with only start date that have started
+          activeConditions.push({
+            startDate: { $lte: now },
+            endDate: { $exists: false },
+            status: 'active'
+          });
+          
+          // 3. Competitions with only end date that haven't ended
+          activeConditions.push({
+            startDate: { $exists: false },
+            endDate: { $gte: now },
+            status: 'active'
+          });
+          
+          // 4. Indefinite competitions (no dates)
+          activeConditions.push({
+            startDate: { $exists: false },
+            endDate: { $exists: false },
+            status: 'active'
+          });
+          
+          filter.$or = activeConditions;
           break;
+          
         case "upcoming":
           // Competitions that haven't started yet
           filter.startDate = { $gt: now };
+          filter.status = 'active';
           break;
+          
         case "ended":
-          // Competitions that have ended
-          filter.endDate = { $lt: now };
+          // Competitions that have ended (either naturally or with selected winner)
+          filter.status = 'ended';
+          break;
+          
+        case "stopped":
+          // Competitions that were manually stopped
+          filter.status = 'stopped';
           break;
       }
     }

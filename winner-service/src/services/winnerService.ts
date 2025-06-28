@@ -18,10 +18,21 @@ export class WinnerService {
     try {
       const now = new Date();
       
-      // Find competitions that have ended but don't have a winner selected yet
+      // Find competitions that have ended naturally or been stopped but don't have a winner selected yet
       const endedCompetitions = await Competition.find({
-        endDate: { $lt: now },
-        isWinnerSelected: false
+        $or: [
+          // Naturally ended competitions
+          {
+            endDate: { $lt: now },
+            status: 'active',
+            isWinnerSelected: false
+          },
+          // Manually stopped competitions
+          {
+            status: 'stopped',
+            isWinnerSelected: false
+          }
+        ]
       });
 
       console.log(`🔍 Found ${endedCompetitions.length} competitions that need winner selection`);
@@ -76,7 +87,8 @@ export class WinnerService {
       // Update competition with winner
       await Competition.findByIdAndUpdate(competitionId, {
         winnerSubmissionId: winningResult.submissionId,
-        isWinnerSelected: true
+        isWinnerSelected: true,
+        status: 'ended' // Mark as ended when winner is selected
       });
 
       // Publish winner selected event

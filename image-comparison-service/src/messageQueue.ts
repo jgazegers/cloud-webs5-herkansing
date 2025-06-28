@@ -14,8 +14,9 @@ export interface CompetitionCreatedEvent {
         longitude: number;
       };
     };
-    startDate: Date;
-    endDate: Date;
+    startDate?: Date; // Optional
+    endDate?: Date; // Optional
+    status: 'active' | 'stopped' | 'ended';
     owner: string;
     createdAt: Date;
     updatedAt: Date;

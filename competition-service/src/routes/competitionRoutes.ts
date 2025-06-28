@@ -3,7 +3,8 @@ import {
   createCompetition, 
   getAllCompetitions, 
   getCompetitionById, 
-  getCompetitionsByUser 
+  getCompetitionsByUser,
+  stopCompetition 
 } from "../controllers";
 import { authenticateInternalToken } from "../middleware/auth";
 import { upload } from "../middleware/upload";
@@ -28,6 +29,13 @@ export function createCompetitionRoutes(messageQueue: MessageQueue): Router {
 
   // Get competitions by user
   router.get("/user/:username", getCompetitionsByUser);
+
+  // Stop competition - requires authentication (owner only)
+  router.patch(
+    "/:competitionId/stop",
+    authenticateInternalToken,
+    stopCompetition(messageQueue)
+  );
 
   return router;
 }

@@ -13,11 +13,13 @@ export interface ICompetition extends Document {
       longitude: number;
     };
   };
-  startDate: Date;
-  endDate: Date;
+  startDate?: Date; // Optional
+  endDate?: Date; // Optional
+  status: 'active' | 'stopped' | 'ended';
   owner: string;
   winnerSubmissionId?: string; // Added to track the winning submission
   isWinnerSelected: boolean;
+  stoppedAt?: Date; // When the competition was manually stopped
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,10 +59,16 @@ const CompetitionSchema: Schema = new Schema({
   },
   startDate: {
     type: Date,
-    required: true
+    required: false
   },
   endDate: {
     type: Date,
+    required: false
+  },
+  status: {
+    type: String,
+    enum: ['active', 'stopped', 'ended'],
+    default: 'active',
     required: true
   },
   owner: {
@@ -74,6 +82,10 @@ const CompetitionSchema: Schema = new Schema({
   isWinnerSelected: {
     type: Boolean,
     default: false
+  },
+  stoppedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true,

@@ -19,18 +19,24 @@ Filter competitions by the username of the competition creator.
 **Description:** Finds all competitions created by the specified user.
 
 ### 3. Status Filter
-Filter competitions by their current status based on start and end dates.
+Filter competitions by their current status. Competitions can now have optional start/end dates.
 
 **Parameter:** `status`  
 **Values:**
-- `active` - Competitions currently running (startDate ≤ now ≤ endDate)
+- `active` - Competitions currently running. This includes:
+  - Traditional competitions with start ≤ now ≤ end
+  - Competitions with only start date that have started
+  - Competitions with only end date that haven't ended
+  - Indefinite competitions with no dates
 - `upcoming` - Competitions that haven't started yet (startDate > now)
-- `ended` - Competitions that have finished (endDate < now)
+- `ended` - Competitions that have finished and have a winner selected
+- `stopped` - Competitions that were manually stopped by the owner
 
 **Examples:**
 - `/api/competitions?status=active`
 - `/api/competitions?status=upcoming`
 - `/api/competitions?status=ended`
+- `/api/competitions?status=stopped`
 
 ### Custom Date Range Filters
 For more precise date filtering, you can use these additional parameters:

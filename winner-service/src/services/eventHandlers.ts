@@ -5,7 +5,8 @@ import { ComparisonResult } from '../models/ComparisonResult';
 import { 
   CompetitionCreatedEvent, 
   SubmissionCreatedEvent, 
-  ComparisonCompletedEvent 
+  ComparisonCompletedEvent,
+  CompetitionStoppedEvent
 } from '../messageQueue';
 import { WinnerService } from './winnerService';
 
@@ -29,17 +30,16 @@ export class EventHandlers {
       if (existingCompetition) {
         console.log(`Competition ${competition._id} already exists, skipping`);
         return;
-      }
-
-      // Create new competition record
+      }      // Create new competition record
       const newCompetition = new Competition({
         _id: competition._id,
         title: competition.title,
         description: competition.description,
         targetImage: competition.targetImage,
         location: competition.location,
-        startDate: new Date(competition.startDate),
-        endDate: new Date(competition.endDate),
+        startDate: competition.startDate ? new Date(competition.startDate) : undefined,
+        endDate: competition.endDate ? new Date(competition.endDate) : undefined,
+        status: competition.status,
         owner: competition.owner,
         isWinnerSelected: false,
         winnerSubmissionId: null
@@ -48,9 +48,11 @@ export class EventHandlers {
       await newCompetition.save();
       
       console.log(`📝 Stored competition: ${competition.title} (ID: ${competition._id})`);
-      console.log(`   End date: ${new Date(competition.endDate).toISOString()}`);
-
-    } catch (error) {
+      if (competition.endDate) {
+        console.log(`   End date: ${new Date(competition.endDate).toISOString()}`);
+      } else {
+        console.log(`   No end date - runs indefinitely until stopped`);
+      }} catch (error) {
       console.error('Error handling competition.created event:', error);
     }
   }
@@ -125,7 +127,7 @@ export class EventHandlers {
       const competition = await Competition.findById(comparisonResult.competitionId);
       if (competition && !competition.isWinnerSelected) {
         const now = new Date();
-        if (competition.endDate <= now) {
+        if (competition.endDate && competition.endDate <= now) {
           console.log(`⏰ Competition ${comparisonResult.competitionId} has ended, checking for winner selection`);
           await this.winnerService.selectWinnerForCompetition(comparisonResult.competitionId);
         }
@@ -133,6 +135,38 @@ export class EventHandlers {
 
     } catch (error) {
       console.error('Error handling comparison.completed event:', error);
+    }
+  }
+
+  /**
+   * Handle competition.stopped events
+   * Update competition status and trigger winner selection
+   */
+  async handleCompetitionStopped(event: CompetitionStoppedEvent): Promise<void> {
+    try {
+      const { competitionId, stoppedAt } = event;
+      
+      console.log(`🛑 Processing competition stopped event for: ${competitionId}`);
+
+      // Find and update the competition
+      const competition = await Competition.findById(competitionId);
+      if (!competition) {
+        console.log(`Competition ${competitionId} not found in winner service`);
+        return;
+      }
+
+      // Update competition status
+      competition.status = 'stopped';
+      competition.stoppedAt = new Date(stoppedAt);
+      await competition.save();
+
+      // Trigger winner selection for the stopped competition
+      await this.winnerService.selectWinnerForCompetition(competitionId);
+
+      console.log(`✅ Updated competition ${competitionId} status to stopped and triggered winner selection`);
+
+    } catch (error) {
+      console.error('Error handling competition.stopped event:', error);
     }
   }
 }

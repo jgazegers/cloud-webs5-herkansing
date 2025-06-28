@@ -61,6 +61,22 @@ export class Server {
       }
     });
 
+    // Manual trigger for specific competition
+    this.app.post('/trigger-winner-selection/:competitionId', async (req, res) => {
+      try {
+        const { competitionId } = req.params;
+        await this.winnerService.selectWinnerForCompetition(competitionId);
+        res.status(200).json({
+          message: `Winner selection triggered for competition ${competitionId}`,
+          competitionId,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error triggering winner selection for specific competition:', error);
+        res.status(500).json({ error: 'Failed to trigger winner selection for competition' });
+      }
+    });
+
     // Fallback route
     this.app.use((req, res) => {
       res.status(404).json({ error: 'Route not found' });

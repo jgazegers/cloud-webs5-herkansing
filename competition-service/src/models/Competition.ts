@@ -11,13 +11,15 @@ export interface ICompetition extends Document {
       longitude: number;
     };
   };
-  startDate: Date;
-  endDate: Date;
+  startDate?: Date; // Optional - competition can start immediately
+  endDate?: Date; // Optional - competition can run indefinitely until manually stopped
+  status: 'active' | 'stopped' | 'ended'; // Track competition status
   owner: string; // username from JWT token
   winnerSubmissionId?: string; // ID of the winning submission
   winnerScore?: number; // Score of the winning submission
   winnerOwner?: string; // Owner of the winning submission
   winnerSelectedAt?: Date; // When the winner was selected
+  stoppedAt?: Date; // When the competition was manually stopped
 }
 
 export interface ICompetitionInput {
@@ -31,8 +33,8 @@ export interface ICompetitionInput {
       longitude: number;
     };
   };
-  startDate: Date;
-  endDate: Date;
+  startDate?: Date; // Optional
+  endDate?: Date; // Optional
   // owner will be extracted from JWT token, not from request body
 }
 
@@ -76,17 +78,27 @@ const CompetitionSchema: Schema<ICompetition> = new Schema(
     },
     startDate: {
       type: Date,
-      required: true,
+      required: false, // Made optional
     },
     endDate: {
       type: Date,
-      required: true,
+      required: false, // Made optional
       validate: {
         validator: function (this: ICompetition, value: Date) {
-          return value > this.startDate;
+          // Only validate if both startDate and endDate are provided
+          if (this.startDate && value) {
+            return value > this.startDate;
+          }
+          return true;
         },
         message: "End date must be after start date",
       },
+    },
+    status: {
+      type: String,
+      enum: ['active', 'stopped', 'ended'],
+      default: 'active',
+      required: true,
     },
     owner: {
       type: String,
@@ -106,6 +118,10 @@ const CompetitionSchema: Schema<ICompetition> = new Schema(
       default: null,
     },
     winnerSelectedAt: {
+      type: Date,
+      default: null,
+    },
+    stoppedAt: {
       type: Date,
       default: null,
     },

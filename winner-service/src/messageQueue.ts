@@ -15,12 +15,20 @@ export interface CompetitionCreatedEvent {
         longitude: number;
       };
     };
-    startDate: Date;
-    endDate: Date;
+    startDate?: Date; // Optional
+    endDate?: Date; // Optional
+    status: 'active' | 'stopped' | 'ended';
     owner: string;
     createdAt: Date;
     updatedAt: Date;
   };
+}
+
+export interface CompetitionStoppedEvent {
+  competitionId: string;
+  title: string;
+  owner: string;
+  stoppedAt: Date;
 }
 
 export interface SubmissionCreatedEvent {
@@ -103,7 +111,8 @@ export class MessageQueue {
   async setupConsumers(
     onCompetitionCreated: (event: CompetitionCreatedEvent) => Promise<void>,
     onSubmissionCreated: (event: SubmissionCreatedEvent) => Promise<void>,
-    onComparisonCompleted: (event: ComparisonCompletedEvent) => Promise<void>
+    onComparisonCompleted: (event: ComparisonCompletedEvent) => Promise<void>,
+    onCompetitionStopped: (event: CompetitionStoppedEvent) => Promise<void>
   ): Promise<void> {
     if (!this.channel) {
       throw new Error('Not connected to RabbitMQ');
@@ -120,6 +129,7 @@ export class MessageQueue {
 
     // Bind queues to exchanges
     await this.channel.bindQueue(competitionQueue, 'competitions', 'competition.created');
+    await this.channel.bindQueue(competitionQueue, 'competitions', 'competition.stopped');
     await this.channel.bindQueue(submissionQueue, 'submissions', 'submission.created');
     await this.channel.bindQueue(comparisonQueue, 'comparisons', 'comparison.completed');
 
@@ -127,11 +137,19 @@ export class MessageQueue {
     this.channel.consume(competitionQueue, async (msg) => {
       if (msg) {
         try {
-          const event: CompetitionCreatedEvent = JSON.parse(msg.content.toString());
-          await onCompetitionCreated(event);
+          const routingKey = msg.fields.routingKey;
+          
+          if (routingKey === 'competition.created') {
+            const event: CompetitionCreatedEvent = JSON.parse(msg.content.toString());
+            await onCompetitionCreated(event);
+          } else if (routingKey === 'competition.stopped') {
+            const event: CompetitionStoppedEvent = JSON.parse(msg.content.toString());
+            await onCompetitionStopped(event);
+          }
+          
           this.channel!.ack(msg);
         } catch (error) {
-          console.error('Error processing competition.created event:', error);
+          console.error('Error processing competition event:', error);
           this.channel!.nack(msg, false, false); // Don't requeue
         }
       }

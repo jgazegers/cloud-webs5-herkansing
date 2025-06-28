@@ -126,16 +126,43 @@ const validateImage = (targetImageBase64: string): string | null => {
 
 // Helper function to validate competition dates
 const validateDates = (competitionData: any): string | null => {
-  const startDate = new Date(competitionData.startDate);
-  const endDate = new Date(competitionData.endDate);
-  const now = new Date();
-
-  if (startDate < now) {
-    return "Start date cannot be in the past";
+  // If no dates are provided, competition runs indefinitely until manually stopped
+  if (!competitionData.startDate && !competitionData.endDate) {
+    return null;
   }
 
-  if (endDate <= startDate) {
-    return "End date must be after start date";
+  const now = new Date();
+
+  // If only startDate is provided
+  if (competitionData.startDate && !competitionData.endDate) {
+    const startDate = new Date(competitionData.startDate);
+    if (startDate < now) {
+      return "Start date cannot be in the past";
+    }
+    return null;
+  }
+
+  // If only endDate is provided
+  if (!competitionData.startDate && competitionData.endDate) {
+    const endDate = new Date(competitionData.endDate);
+    if (endDate <= now) {
+      return "End date must be in the future";
+    }
+    return null;
+  }
+
+  // If both dates are provided
+  if (competitionData.startDate && competitionData.endDate) {
+    const startDate = new Date(competitionData.startDate);
+    const endDate = new Date(competitionData.endDate);
+
+    if (startDate < now) {
+      return "Start date cannot be in the past";
+    }
+
+    if (endDate <= startDate) {
+      return "End date must be after start date";
+    }
   }
 
   return null;
@@ -171,6 +198,7 @@ const publishCompetitionEvent = async (
       location: competition.location,
       startDate: competition.startDate,
       endDate: competition.endDate,
+      status: competition.status,
       owner: competition.owner,
       createdAt: competition.createdAt,
       updatedAt: competition.updatedAt,

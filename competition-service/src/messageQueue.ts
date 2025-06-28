@@ -14,12 +14,20 @@ export interface CompetitionCreatedEvent {
         longitude: number;
       };
     };
-    startDate: Date;
-    endDate: Date;
+    startDate?: Date; // Optional
+    endDate?: Date; // Optional
+    status: 'active' | 'stopped' | 'ended';
     owner: string;
     createdAt: Date;
     updatedAt: Date;
   };
+}
+
+export interface CompetitionStoppedEvent {
+  competitionId: string;
+  title: string;
+  owner: string;
+  stoppedAt: Date;
 }
 
 export interface WinnerSelectedEvent {
@@ -86,6 +94,22 @@ export class MessageQueue {
     });
 
     console.log(`Published competition.created event for ID: ${event.competition._id}`);
+  }
+
+  async publishCompetitionStopped(event: CompetitionStoppedEvent): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Not connected to RabbitMQ');
+    }
+
+    const routingKey = 'competition.stopped';
+    const message = Buffer.from(JSON.stringify(event));
+
+    this.channel.publish('competitions', routingKey, message, {
+      persistent: true,
+      timestamp: Date.now(),
+    });
+
+    console.log(`Published competition.stopped event for ID: ${event.competitionId}`);
   }
 
   async setupWinnerConsumer(onWinnerSelected: (event: WinnerSelectedEvent) => Promise<void>): Promise<void> {
