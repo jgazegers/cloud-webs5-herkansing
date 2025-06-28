@@ -2,15 +2,86 @@
 import mongoose, { Document, Schema } from "mongoose";
 import express, { Request } from "express";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { MessageQueue, CompetitionCreatedEvent } from "./messageQueue";
 
-// Extend Express Request interface to include 'username'
+// Extend Express Request interface to include 'username' and multer file
 declare global {
   namespace Express {
     interface Request {
       username?: string;
+      file?: Express.Multer.File;
     }
   }
+}
+
+// Helper function to validate base64 image
+function isValidBase64Image(base64String: string): boolean {
+  // Check if it's a valid base64 data URL for images
+  const base64Regex =
+    /^data:image\/(jpeg|jpg|png|gif|webp|bmp);base64,([A-Za-z0-9+/=]+)$/;
+  return base64Regex.test(base64String);
+}
+
+// Helper function to get image info from base64
+function getImageInfo(
+  base64String: string
+): { type: string; size: number } | null {
+  if (!isValidBase64Image(base64String)) return null;
+
+  const matches = base64String.match(/^data:image\/([^;]+);base64,(.+)$/);
+  if (!matches) return null;
+
+  const [, type, data] = matches;
+  const size = Math.ceil(data.length * 0.75); // Approximate size in bytes
+
+  return { type, size };
+}
+
+// Maximum file size (10MB for target images)
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = "./uploads/competitions";
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename with timestamp and random string
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "target-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+// File filter to accept only images
+const fileFilter = (req: any, file: any, cb: any) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed!"), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: MAX_IMAGE_SIZE, // 10MB limit
+  },
+  fileFilter: fileFilter,
+});
+
+// Helper function to convert file to base64
+function fileToBase64(filePath: string, mimeType: string): string {
+  const fileBuffer = fs.readFileSync(filePath);
+  const base64String = fileBuffer.toString("base64");
+  return `data:${mimeType};base64,${base64String}`;
 }
 
 export interface ICompetition extends Document {
@@ -175,37 +246,218 @@ initializeMessageQueue();
 
 app.use(express.json());
 
-app.post("/", authenticateInternalToken, async (req, res) => {
-  try {
-    const competitionData: ICompetitionInput = req.body;
-    const competition = new Competition({
-      ...competitionData,
-      owner: req.username, // Set owner from JWT token
-    });
-    await competition.save();
-
-    // Publish competition created event
-    const event: CompetitionCreatedEvent = {
-      competitionId: (competition._id as mongoose.Types.ObjectId).toString(),
-      title: competition.title,
-      owner: competition.owner,
-      createdAt: new Date(),
-    };
-
+app.post(
+  "/",
+  authenticateInternalToken,
+  upload.single("targetImage"),
+  async (req, res) => {
     try {
-      await messageQueue.publishCompetitionCreated(event);
-    } catch (mqError) {
-      console.error("Failed to publish competition created event:", mqError);
-      // Don't fail the request if message publishing fails
-      // In production, you might want to store this in a dead letter queue
-      console.log(
-        "🚨 Competition created but event not published. Manual intervention may be required."
-      );
+      // Handle both form-data and JSON input
+      let competitionData: any;
+      let targetImageBase64: string | undefined;
+
+      if (req.file) {
+        // Form-data submission with file upload
+        competitionData = {
+          title: req.body.title,
+          description: req.body.description,
+          location:
+            typeof req.body.location === "string"
+              ? JSON.parse(req.body.location)
+              : req.body.location,
+          startDate: req.body.startDate,
+          endDate: req.body.endDate,
+        };
+        // Convert uploaded file to base64
+        const { mimetype } = req.file;
+        targetImageBase64 = fileToBase64(req.file.path, mimetype);
+
+        // Clean up uploaded file after processing
+        fs.unlinkSync(req.file.path);
+      } else {
+        // JSON submission with base64 image
+        competitionData = req.body;
+        targetImageBase64 = competitionData.targetImage;
+      }
+
+      // Validate required fields
+      if (
+        !competitionData.title ||
+        !competitionData.description ||
+        !targetImageBase64
+      ) {
+        res.status(400).json({
+          error:
+            "Missing required fields: title, description, and targetImage are required",
+        });
+        return;
+      }
+
+      // Validate base64 image format
+      if (!isValidBase64Image(targetImageBase64)) {
+        res.status(400).json({
+          error:
+            "Invalid target image format. Please provide a valid base64-encoded image (JPEG, PNG, GIF, WebP, or BMP)",
+        });
+        return;
+      }
+
+      // Check image size
+      const imageInfo = getImageInfo(targetImageBase64);
+      if (!imageInfo) {
+        res.status(400).json({
+          error: "Failed to process target image data",
+        });
+        return;
+      }
+
+      if (imageInfo.size > MAX_IMAGE_SIZE) {
+        res.status(400).json({
+          error: `Target image too large. Maximum size is ${
+            MAX_IMAGE_SIZE / (1024 * 1024)
+          }MB`,
+        });
+        return;
+      }
+
+      // Validate dates
+      const startDate = new Date(competitionData.startDate);
+      const endDate = new Date(competitionData.endDate);
+      const now = new Date();
+
+      if (startDate < now) {
+        res.status(400).json({
+          error: "Start date cannot be in the past",
+        });
+        return;
+      }
+
+      if (endDate <= startDate) {
+        res.status(400).json({
+          error: "End date must be after start date",
+        });
+        return;
+      }
+
+      const competition = new Competition({
+        ...competitionData,
+        targetImage: targetImageBase64, // Use base64 image data
+        owner: req.username, // Set owner from JWT token
+      });
+      await competition.save();
+
+      // Publish competition created event
+      const event: CompetitionCreatedEvent = {
+        competitionId: (competition._id as mongoose.Types.ObjectId).toString(),
+        title: competition.title,
+        owner: competition.owner,
+        createdAt: new Date(),
+      };
+
+      try {
+        await messageQueue.publishCompetitionCreated(event);
+      } catch (mqError) {
+        console.error("Failed to publish competition created event:", mqError);
+        // Don't fail the request if message publishing fails
+        // In production, you might want to store this in a dead letter queue
+        console.log(
+          "🚨 Competition created but event not published. Manual intervention may be required."
+        );
+      }
+
+      res.status(201).json({
+        ...competition.toObject(),
+        targetImageInfo: {
+          type: imageInfo.type,
+          size: imageInfo.size,
+        },
+      });
+    } catch (error) {
+      console.error("Error creating competition:", error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+// GET endpoint to retrieve all competitions
+app.get("/", async (req, res) => {
+  try {
+    const competitions = await Competition.find()
+      .select("-__v")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      totalCompetitions: competitions.length,
+      competitions: competitions.map((competition) => {
+        const imageInfo = getImageInfo(competition.targetImage);
+        return {
+          ...competition.toObject(),
+          // Truncate base64 image data in list view for performance
+          targetImage:
+            competition.targetImage.substring(0, 100) + "...[truncated]",
+          targetImageInfo: imageInfo || { type: "unknown", size: 0 },
+        };
+      }),
+    });
+  } catch (error) {
+    console.error("Error retrieving competitions:", error);
+    res.status(500).json({ error: "Failed to retrieve competitions" });
+  }
+});
+
+// GET endpoint to retrieve a specific competition with full image data
+app.get("/:competitionId", async (req, res) => {
+  try {
+    const { competitionId } = req.params;
+
+    const competition = await Competition.findById(competitionId).select(
+      "-__v"
+    );
+
+    if (!competition) {
+      res.status(404).json({ error: "Competition not found" });
+      return;
     }
 
-    res.status(201).json(competition);
+    // Get image info
+    const imageInfo = getImageInfo(competition.targetImage);
+
+    res.status(200).json({
+      ...competition.toObject(),
+      targetImageInfo: imageInfo || { type: "unknown", size: 0 },
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Error retrieving competition:", error);
+    res.status(500).json({ error: "Failed to retrieve competition" });
+  }
+});
+
+// GET endpoint to retrieve competitions by user
+app.get("/user/:username", async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const competitions = await Competition.find({ owner: username })
+      .select("-__v")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      owner: username,
+      totalCompetitions: competitions.length,
+      competitions: competitions.map((competition) => {
+        const imageInfo = getImageInfo(competition.targetImage);
+        return {
+          ...competition.toObject(),
+          // Truncate base64 image data in list view
+          targetImage:
+            competition.targetImage.substring(0, 100) + "...[truncated]",
+          targetImageInfo: imageInfo || { type: "unknown", size: 0 },
+        };
+      }),
+    });
+  } catch (error) {
+    console.error("Error retrieving user competitions:", error);
+    res.status(500).json({ error: "Failed to retrieve user competitions" });
   }
 });
 
