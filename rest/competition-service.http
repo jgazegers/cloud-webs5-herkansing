@@ -6,22 +6,39 @@
 
 ### Create a new competition via API Gateway (requires external JWT token)
 POST {{apiGatewayUrl}}/api/competitions
-Content-Type: application/json
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 Authorization: Bearer {{externalToken}}
 
-{
-    "title": "Photo Hunt Challenge",
-    "description": "Find and photograph the hidden landmark in the city center. First to submit wins!",
-    "targetImage": "{{imageData}}",
-    "location": {
-        "name": "Central Park",
-        "coordinates": {
-            "latitude": 40.7829,
-            "longitude": -73.9654
-        }
-    },
-    "startDate": "2025-06-28T10:00:00.000Z",
-    "endDate": "2025-06-28T18:00:00.000Z"
-}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
 
-###
+Photo Hunt Challenge
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Find and photograph the hidden landmark in the city center. First to submit wins!
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="targetImage"; filename="submission-1.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/target.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="location"
+Content-Type: application/json
+
+{
+    "name": "Central Park",
+    "coordinates": {
+        "latitude": 40.7829,
+        "longitude": -73.9654
+    }
+}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="startDate"
+
+2026-06-28T10:00:00.000Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="endDate"
+
+2026-06-28T18:00:00.000Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

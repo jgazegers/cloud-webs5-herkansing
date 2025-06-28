@@ -3,6 +3,11 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import jwt from "jsonwebtoken";
 
 const app = express();
+
+// Increase payload limit for base64 images (20MB)
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ limit: "20mb", extended: true }));
+
 const PORT = 3000;
 
 const services = {
@@ -60,8 +65,22 @@ app.use(
     pathRewrite: {
       "^/api/users": "/",
     },
+    // Configure proxy to handle larger payloads
     on: {
       error: onErrorHandle,
+      proxyReq: (proxyReq, req, res) => {
+        // Ensure proper headers are set for large payloads
+        if (req.headers['content-length']) {
+          proxyReq.setHeader('content-length', req.headers['content-length']);
+        }
+        // Handle JSON payloads properly for large requests
+        if (req.body && typeof req.body === 'object') {
+          const bodyData = JSON.stringify(req.body);
+          proxyReq.setHeader('Content-Type', 'application/json');
+          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+          proxyReq.write(bodyData);
+        }
+      },
     },
   })
 );
@@ -78,6 +97,15 @@ app.use(
     },
     on: {
       error: onErrorHandle,
+      proxyReq: (proxyReq, req, res) => {
+        // Handle large file uploads and form data
+        if (req.headers['content-length']) {
+          proxyReq.setHeader('content-length', req.headers['content-length']);
+        }
+        if (req.headers['content-type']) {
+          proxyReq.setHeader('content-type', req.headers['content-type']);
+        }
+      },
     },
   })
 );
@@ -93,6 +121,15 @@ app.use(
     },
     on: {
       error: onErrorHandle,
+      proxyReq: (proxyReq, req, res) => {
+        // Handle large file uploads and form data
+        if (req.headers['content-length']) {
+          proxyReq.setHeader('content-length', req.headers['content-length']);
+        }
+        if (req.headers['content-type']) {
+          proxyReq.setHeader('content-type', req.headers['content-type']);
+        }
+      },
     },
   })
 );

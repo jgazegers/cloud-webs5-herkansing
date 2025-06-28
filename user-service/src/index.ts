@@ -78,6 +78,10 @@ const startServer = async () => {
     }
   });
 
+  app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   app.listen(3001, () => {
     console.log("Users service connected");
   });

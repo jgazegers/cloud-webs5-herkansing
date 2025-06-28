@@ -28,7 +28,7 @@ services:
   api-gateway:
     build:
       context: ./api-gateway
-      dockerfile: Dockerfile.dev
+      dockerfile: ../Dockerfile.dev
     container_name: api-gateway
     ports:
       - "3000:3000"
@@ -42,7 +42,7 @@ services:
   user-service:
     build:
       context: ./user-service
-      dockerfile: Dockerfile.dev
+      dockerfile: ../Dockerfile.dev
     container_name: user-service
     ports:
       - "3001:3001"
@@ -61,7 +61,7 @@ services:
   competition-service:
     build:
       context: ./competition-service
-      dockerfile: Dockerfile.dev
+      dockerfile: ../Dockerfile.dev
     container_name: competition-service
     ports:
       - "3002:3002"
@@ -80,7 +80,7 @@ services:
   submission-service:
     build:
       context: ./submission-service
-      dockerfile: Dockerfile.dev
+      dockerfile: ../Dockerfile.dev
     container_name: submission-service
     ports:
       - "3003:3003"
