@@ -1,2 +1,6 @@
+###
+### API GATEWAY HEALTH CHECK
+###
+
 ### Test API gateway is running
 GET {{apiGatewayUrl}}

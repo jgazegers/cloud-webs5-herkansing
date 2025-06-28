@@ -1,17 +1,11 @@
 ###
-### SUBMISSION SERVICE API TESTS
-### 
-### API GATEWAY ROUTES (Recommended for production)
-### These routes go through the API Gateway which:
-### 1. Validates external JWT tokens (JWT_SECRET_EXTERNAL)
-### 2. Exchanges them for internal JWT tokens (JWT_SECRET_INTERNAL)
-### 3. Forwards requests to the submission service
+### SUBMISSION SERVICE API TESTS (via API Gateway)
 ###
 
-### Create a new submission via API Gateway (requires external JWT token)
+### Create a new submission
 POST {{apiGatewayUrl}}/api/submissions
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Authorization: Bearer {{externalToken}}
+Authorization: Bearer {{submissionOwnerExternalToken}}
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="competitionId"
@@ -24,48 +18,14 @@ Content-Type: image/jpeg
 < ./test-images/submission-1.jpg
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
-### Create a submission with PNG image
-POST {{apiGatewayUrl}}/api/submissions
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Authorization: Bearer {{externalToken}}
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="competitionId"
-
-{{validCompetitionId}}
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="submissionData"; filename="submission.png"
-Content-Type: image/png
-
-< ./test-images/submission.png
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
-
-### Create a submission with WEBP image
-POST {{apiGatewayUrl}}/api/submissions
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Authorization: Bearer {{externalToken}}
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="competitionId"
-
-{{validCompetitionId}}
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="submissionData"; filename="submission.webp"
-Content-Type: image/webp
-
-< ./test-images/submission.webp
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
-
 ### Get submissions for a specific competition
 GET {{apiGatewayUrl}}/api/submissions/competition/{{validCompetitionId}}
-Authorization: Bearer {{externalToken}}
+Authorization: Bearer {{submissionOwnerExternalToken}}
 
 ### Get a specific submission with full image data
 GET {{apiGatewayUrl}}/api/submissions/{{validSubmissionId}}
-Authorization: Bearer {{externalToken}}
+Authorization: Bearer {{submissionOwnerExternalToken}}
 
 ### Get current user's submissions
-GET {{apiGatewayUrl}}/api/submissions/user/my-submissions
-Authorization: Bearer {{externalToken}}
-
-###
+GET {{apiGatewayUrl}}/api/submissions/my-submissions
+Authorization: Bearer {{submissionOwnerExternalToken}}

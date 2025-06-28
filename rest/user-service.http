@@ -1,36 +1,33 @@
-### Nieuwe gebruiker aanmaken via API Gateway
+###
+### USER SERVICE API TESTS (via API Gateway)
+###
+
+### Register a new user
 POST {{apiGatewayUrl}}/api/users/register
 Content-Type: application/json
 
 {
-    "username": "Test McTest",
+    "username": "CompetitionOwner",
     "password": "SecurePassword"
 }
 
-###
-
-### Nieuwe gebruiker aanmaken (direct service access)
-POST {{userServiceUrl}}/register
-Content-Type: application/json
-
-{
-    "username": "Test McTest",
-    "password": "SecurePassword"
-}
-
-### Login via API Gateway
+### Login competition owner
 POST {{apiGatewayUrl}}/api/users/login
 Content-Type: application/json
 
 {
-    "username": "Test McTest",
+    "username": "CompetitionOwner",
     "password": "SecurePassword"
 }
 
-###
+### Login submission owner
+POST {{apiGatewayUrl}}/api/users/login
+Content-Type: application/json
 
-### Health check via API Gateway
+{
+    "username": "SubmissionOwner",
+    "password": "SecurePassword"
+}
+
+### Health check
 GET {{apiGatewayUrl}}/api/users/health
-
-### Health check (direct service access)
-GET {{userServiceUrl}}/health
