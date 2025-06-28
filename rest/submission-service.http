@@ -29,3 +29,19 @@ Authorization: Bearer {{submissionOwnerExternalToken}}
 ### Get current user's submissions
 GET {{apiGatewayUrl}}/api/submissions/my-submissions
 Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Create a new submission with the same image
+POST {{apiGatewayUrl}}/api/submissions
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="competitionId"
+
+{{validCompetitionId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="submissionData"; filename="target.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/target.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

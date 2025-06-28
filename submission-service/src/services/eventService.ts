@@ -21,19 +21,21 @@ export class EventService {
   // Function to handle competition created events
   private async handleCompetitionCreated(event: CompetitionCreatedEvent): Promise<void> {
     try {
+      // Cherry-pick only the data we need for validation
       const validCompetition = new ValidCompetition({
-        competitionId: event.competitionId,
-        title: event.title,
-        owner: event.owner,
-        createdAt: event.createdAt,
+        competitionId: event.competition._id,
+        title: event.competition.title,
+        owner: event.competition.owner,
+        targetImage: event.competition.targetImage,
+        createdAt: event.competition.createdAt,
       });
       
       await validCompetition.save();
-      console.log(`Stored valid competition ID: ${event.competitionId}`);
+      console.log(`Stored valid competition ID: ${event.competition._id}`);
     } catch (error: any) {
       if (error.code === 11000) {
         // Duplicate key error - competition already exists
-        console.log(`Competition ${event.competitionId} already exists in cache`);
+        console.log(`Competition ${event.competition._id} already exists in cache`);
       } else {
         console.error('Error storing competition:', error);
         throw error;

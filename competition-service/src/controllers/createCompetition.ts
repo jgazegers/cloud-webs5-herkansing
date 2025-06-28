@@ -163,10 +163,18 @@ const publishCompetitionEvent = async (
   competition: any
 ): Promise<void> => {
   const event: CompetitionCreatedEvent = {
-    competitionId: (competition._id as mongoose.Types.ObjectId).toString(),
-    title: competition.title,
-    owner: competition.owner,
-    createdAt: new Date(),
+    competition: {
+      _id: (competition._id as mongoose.Types.ObjectId).toString(),
+      title: competition.title,
+      description: competition.description,
+      targetImage: competition.targetImage,
+      location: competition.location,
+      startDate: competition.startDate,
+      endDate: competition.endDate,
+      owner: competition.owner,
+      createdAt: competition.createdAt,
+      updatedAt: competition.updatedAt,
+    },
   };
 
   try {

@@ -15,8 +15,8 @@ router.post("/", authenticateInternalToken, upload.single('submissionData'), cre
 // GET endpoint to retrieve submissions for a competition
 router.get("/competition/:competitionId", authenticateInternalToken, getSubmissionsByCompetition);
 
-// GET endpoint to retrieve user's own submissions
-router.get("/my-submissions", authenticateInternalToken, getUserSubmissions);
+// GET endpoint to retrieve user's own submissions (must come before /:submissionId)
+router.get("/user/my-submissions", authenticateInternalToken, getUserSubmissions);
 
 // GET endpoint to retrieve a specific submission with full image data
 router.get("/:submissionId", authenticateInternalToken, getSubmissionById);

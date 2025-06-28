@@ -7,7 +7,7 @@ POST {{apiGatewayUrl}}/api/users/register
 Content-Type: application/json
 
 {
-    "username": "CompetitionOwner",
+    "username": "SubmissionOwner",
     "password": "SecurePassword"
 }
 

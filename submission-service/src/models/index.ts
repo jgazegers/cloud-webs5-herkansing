@@ -34,6 +34,10 @@ const ValidCompetitionSchema = new mongoose.Schema<IValidCompetition>(
       type: String,
       required: true,
     },
+    targetImage: {
+      type: String,
+      required: true,
+    },
     createdAt: {
       type: Date,
       required: true,

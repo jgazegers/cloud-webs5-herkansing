@@ -2,10 +2,24 @@
 import amqp from 'amqplib';
 
 export interface CompetitionCreatedEvent {
-  competitionId: string;
-  title: string;
-  owner: string;
-  createdAt: Date;
+  competition: {
+    _id: string;
+    title: string;
+    description: string;
+    targetImage: string; // base64 encoded image
+    location: {
+      name: string;
+      coordinates: {
+        latitude: number;
+        longitude: number;
+      };
+    };
+    startDate: Date;
+    endDate: Date;
+    owner: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
 }
 
 export class MessageQueue {
@@ -60,7 +74,7 @@ export class MessageQueue {
       timestamp: Date.now(),
     });
 
-    console.log(`Published competition.created event for ID: ${event.competitionId}`);
+    console.log(`Published competition.created event for ID: ${event.competition._id}`);
   }
 
   async close(): Promise<void> {

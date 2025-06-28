@@ -27,3 +27,20 @@ export function fileToBase64(filePath: string, mimeType: string): string {
   const base64String = fileBuffer.toString('base64');
   return `data:${mimeType};base64,${base64String}`;
 }
+
+// Helper function to extract base64 data from data URL
+function extractBase64Data(dataUrl: string): string {
+  const matches = dataUrl.match(/^data:image\/[^;]+;base64,(.+)$/);
+  return matches ? matches[1] : dataUrl;
+}
+
+// Helper function to compare two base64 images
+export function areImagesIdentical(image1: string, image2: string): boolean {
+  if (!image1 || !image2) return false;
+  
+  // Extract just the base64 data (without the data:image/... prefix)
+  const base64Data1 = extractBase64Data(image1);
+  const base64Data2 = extractBase64Data(image2);
+  
+  return base64Data1 === base64Data2;
+}

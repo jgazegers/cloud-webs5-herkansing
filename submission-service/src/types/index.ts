@@ -14,6 +14,7 @@ export interface IValidCompetition {
   competitionId: string;
   title: string;
   owner: string;
+  targetImage: string; // base64 encoded target image
   createdAt: Date;
 }
 

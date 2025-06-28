@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import { Submission, ValidCompetition } from "../models";
-import { getImageInfo, fileToBase64 } from "../utils";
+import { getImageInfo, fileToBase64, areImagesIdentical } from "../utils";
 import { MAX_IMAGE_SIZE } from "../middleware";
 
 export const createSubmission = async (req: Request, res: Response): Promise<void> => {
@@ -57,6 +57,14 @@ export const createSubmission = async (req: Request, res: Response): Promise<voi
     // Check image size
     if (imageInfo.size > MAX_IMAGE_SIZE) {
       res.status(400).json({ error: "Image size exceeds the 5MB limit." });
+      return;
+    }
+
+    // Validate that the submission image is not identical to the target image
+    if (areImagesIdentical(base64Image, validCompetition.targetImage)) {
+      res.status(400).json({ 
+        error: "Submission image cannot be identical to the competition target image. Please upload a different image." 
+      });
       return;
     }
 
