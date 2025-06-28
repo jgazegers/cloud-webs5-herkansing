@@ -79,6 +79,14 @@ export const getAllCompetitions = async (req: Request, res: Response) => {
           targetImage:
             competition.targetImage.substring(0, 100) + "...[truncated]",
           targetImageInfo: imageInfo || { type: "unknown", size: 0 },
+          // Include winner information if available
+          hasWinner: !!competition.winnerSubmissionId,
+          winner: competition.winnerSubmissionId ? {
+            submissionId: competition.winnerSubmissionId,
+            score: competition.winnerScore,
+            owner: competition.winnerOwner,
+            selectedAt: competition.winnerSelectedAt
+          } : null,
         };
       }),
     });

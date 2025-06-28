@@ -115,6 +115,25 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  winner-service:
+    build:
+      context: ./winner-service
+      dockerfile: ../Dockerfile.dev
+    container_name: winner-service
+    ports:
+      - "3005:3005"
+    env_file:
+      - ./winner-service/.env
+      - .env
+    volumes:
+      - ./winner-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   mongo-data:
   rabbitmq-data:

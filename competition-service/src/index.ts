@@ -2,12 +2,14 @@ import express from "express";
 import { MessageQueue } from "./messageQueue";
 import { connectToDatabase } from "./config/database";
 import { createCompetitionRoutes } from "./routes/competitionRoutes";
+import { WinnerEventHandler } from "./services/winnerEventHandler";
 import "./types/express";
 
 const app = express();
 
 // Initialize message queue
 const messageQueue = new MessageQueue();
+const winnerEventHandler = new WinnerEventHandler();
 
 // Connect to MongoDB
 connectToDatabase();
@@ -16,6 +18,9 @@ connectToDatabase();
 async function initializeMessageQueue() {
   try {
     await messageQueue.connect();
+    await messageQueue.setupWinnerConsumer(
+      winnerEventHandler.handleWinnerSelected.bind(winnerEventHandler)
+    );
   } catch (error) {
     console.error("Failed to connect to RabbitMQ during startup:", error);
     console.log(

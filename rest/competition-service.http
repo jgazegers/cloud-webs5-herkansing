@@ -41,6 +41,45 @@ Content-Disposition: form-data; name="endDate"
 2026-06-28T18:00:00.000Z
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
+### Create a new competition that starts soon
+POST {{apiGatewayUrl}}/api/competitions
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer {{competitionOwnerExternalToken}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+Photo Hunt Challenge
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Find and photograph the hidden landmark in the city center. First to submit wins!
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="targetImage"; filename="target.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/target.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="location"
+Content-Type: application/json
+
+{
+    "name": "Central Park",
+    "coordinates": {
+        "latitude": 40.7829,
+        "longitude": -73.9654
+    }
+}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="startDate"
+
+2025-06-28T19:57:00.000Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="endDate"
+
+2025-06-28T19:58:00.000Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
 ### Get all competitions
 GET {{apiGatewayUrl}}/api/competitions
 Authorization: Bearer {{submissionOwnerExternalToken}}

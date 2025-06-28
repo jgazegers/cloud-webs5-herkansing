@@ -14,6 +14,10 @@ export interface ICompetition extends Document {
   startDate: Date;
   endDate: Date;
   owner: string; // username from JWT token
+  winnerSubmissionId?: string; // ID of the winning submission
+  winnerScore?: number; // Score of the winning submission
+  winnerOwner?: string; // Owner of the winning submission
+  winnerSelectedAt?: Date; // When the winner was selected
 }
 
 export interface ICompetitionInput {
@@ -88,6 +92,22 @@ const CompetitionSchema: Schema<ICompetition> = new Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    winnerSubmissionId: {
+      type: String,
+      default: null,
+    },
+    winnerScore: {
+      type: Number,
+      default: null,
+    },
+    winnerOwner: {
+      type: String,
+      default: null,
+    },
+    winnerSelectedAt: {
+      type: Date,
+      default: null,
     },
   },
   {

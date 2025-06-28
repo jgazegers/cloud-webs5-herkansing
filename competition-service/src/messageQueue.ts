@@ -22,6 +22,16 @@ export interface CompetitionCreatedEvent {
   };
 }
 
+export interface WinnerSelectedEvent {
+  competitionId: string;
+  winnerSubmissionId: string;
+  winnerScore: number;
+  winnerOwner: string;
+  competitionTitle: string;
+  submissionDate: Date;
+  selectedAt: Date;
+}
+
 export class MessageQueue {
   private channelModel: amqp.ChannelModel | null = null;
   private channel: amqp.Channel | null = null;
@@ -40,6 +50,7 @@ export class MessageQueue {
         
         // Declare the exchange for competition events
         await this.channel.assertExchange('competitions', 'topic', { durable: true });
+        await this.channel.assertExchange('winners', 'topic', { durable: true });
         
         console.log('✅ Connected to RabbitMQ successfully');
         return;
@@ -75,6 +86,32 @@ export class MessageQueue {
     });
 
     console.log(`Published competition.created event for ID: ${event.competition._id}`);
+  }
+
+  async setupWinnerConsumer(onWinnerSelected: (event: WinnerSelectedEvent) => Promise<void>): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Not connected to RabbitMQ');
+    }
+
+    const winnerQueue = 'competition-service-winners';
+    
+    await this.channel.assertQueue(winnerQueue, { durable: true });
+    await this.channel.bindQueue(winnerQueue, 'winners', 'winner.selected');
+
+    this.channel.consume(winnerQueue, async (msg) => {
+      if (msg) {
+        try {
+          const event: WinnerSelectedEvent = JSON.parse(msg.content.toString());
+          await onWinnerSelected(event);
+          this.channel!.ack(msg);
+        } catch (error) {
+          console.error('Error processing winner.selected event:', error);
+          this.channel!.nack(msg, false, false); // Don't requeue
+        }
+      }
+    });
+
+    console.log('🎧 Winner event consumer set up successfully');
   }
 
   async close(): Promise<void> {
