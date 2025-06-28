@@ -14,11 +14,14 @@
   "dependencies": {
     "@types/amqplib": "^0.10.7",
     "@types/express": "^5.0.3",
+    "@types/form-data": "^2.2.1",
     "@types/mongoose": "^5.11.96",
     "amqplib": "^0.10.8",
+    "axios": "^1.6.0",
+    "dotenv": "^17.0.0",
     "express": "^5.1.0",
-    "mongoose": "^8.16.1",
-    "axios": "^1.6.0"
+    "form-data": "^4.0.3",
+    "mongoose": "^8.16.1"
   },
   "devDependencies": {
     "tsx": "^4.20.3"

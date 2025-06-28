@@ -1,4 +1,6 @@
 // src/index.ts
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import { connectDatabase, closeDatabase } from './config/database';
 import { MessageQueue } from './messageQueue';

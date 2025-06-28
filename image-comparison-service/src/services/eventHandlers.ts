@@ -1,8 +1,14 @@
 // src/services/eventHandlers.ts
 import { Competition, Submission, ComparisonResult } from '../models';
 import { CompetitionCreatedEvent, SubmissionCreatedEvent } from '../messageQueue';
+import { ImaggaService } from './imaggaService';
 
 export class EventHandlers {
+  private imaggaService: ImaggaService;
+
+  constructor() {
+    this.imaggaService = new ImaggaService();
+  }
   
   /**
    * Handle competition created events by storing competition data locally
@@ -71,13 +77,77 @@ export class EventHandlers {
       console.log(`✅ Created comparison task for submission: ${event.submission._id}`);
       console.log(`🎯 Will compare against competition: ${competition._id}`);
       
-      // TODO: In the next phase, we'll call the Imagga API here
-      // For now, we just log that the comparison would happen
-      console.log(`🔄 Image comparison would start here for submission ${event.submission._id}`);
+      // Perform the actual image comparison
+      await this.performImageComparison(comparisonResult, competition.targetImage, submission.submissionData);
       
     } catch (error) {
       console.error(`❌ Error handling submission created event:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Perform image comparison using Imagga service
+   */
+  private async performImageComparison(
+    comparisonResult: any,
+    targetImage: string,
+    submissionImage: string
+  ): Promise<void> {
+    try {
+      console.log(`🔄 Starting image comparison for submission: ${comparisonResult.submissionId}`);
+      
+      // Check if Imagga service is properly configured
+      if (!this.imaggaService.isConfigured()) {
+        const errorMsg = 'Imagga API not configured - comparison cannot be performed';
+        console.warn(`⚠️ ${errorMsg}`);
+        
+        await ComparisonResult.findByIdAndUpdate(comparisonResult._id, {
+          status: 'failed',
+          errorMessage: errorMsg
+        });
+        return;
+      }
+
+      // Validate that both images are provided
+      if (!targetImage || !submissionImage) {
+        const errorMsg = 'Missing target or submission image data';
+        console.error(`❌ ${errorMsg}`);
+        
+        await ComparisonResult.findByIdAndUpdate(comparisonResult._id, {
+          status: 'failed',
+          errorMessage: errorMsg
+        });
+        return;
+      }
+
+      console.log(`📷 Comparing images for submission: ${comparisonResult.submissionId}`);
+      
+      // Call Imagga API to compare the images
+      const comparisonResponse = await this.imaggaService.compareImages(targetImage, submissionImage);
+      
+      console.log(`✅ Image comparison completed - Score: ${comparisonResponse.score}%`);
+      
+      // Update the comparison result with the score and mark as completed
+      await ComparisonResult.findByIdAndUpdate(comparisonResult._id, {
+        status: 'completed',
+        score: comparisonResponse.score,
+        imaggaResponse: comparisonResponse
+      });
+
+      console.log(`💾 Saved comparison result for submission: ${comparisonResult.submissionId} with score: ${comparisonResponse.score}%`);
+      
+    } catch (error) {
+      console.error(`❌ Error during image comparison for submission ${comparisonResult.submissionId}:`, error);
+      
+      // Update the comparison result with error status
+      await ComparisonResult.findByIdAndUpdate(comparisonResult._id, {
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error during image comparison'
+      });
+      
+      // Don't re-throw the error to prevent the entire event handler from failing
+      // This allows other submissions to continue processing
     }
   }
 }
