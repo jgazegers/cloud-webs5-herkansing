@@ -15,6 +15,21 @@ const SubmissionSchema = new mongoose.Schema<ISubmission>(
       type: String,
       required: true,
     },
+    similarityScore: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+    },
+    comparisonStatus: {
+      type: String,
+      enum: ['pending', 'completed', 'failed'],
+      default: 'pending',
+    },
+    comparisonError: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

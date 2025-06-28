@@ -33,6 +33,19 @@ export interface SubmissionCreatedEvent {
   };
 }
 
+export interface ComparisonCompletedEvent {
+  comparisonResult: {
+    _id: string;
+    submissionId: string;
+    competitionId: string;
+    score: number;
+    status: 'completed' | 'failed';
+    errorMessage?: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
+
 export class MessageQueue {
   private channelModel: amqp.ChannelModel | null = null;
   private channel: amqp.Channel | null = null;
@@ -52,6 +65,7 @@ export class MessageQueue {
         // Declare exchanges
         await this.channel.assertExchange('competitions', 'topic', { durable: true });
         await this.channel.assertExchange('submissions', 'topic', { durable: true });
+        await this.channel.assertExchange('comparisons', 'topic', { durable: true });
         
         console.log('✅ Connected to RabbitMQ successfully');
         return;
@@ -131,6 +145,28 @@ export class MessageQueue {
     });
 
     console.log('📢 Subscribed to submission events');
+  }
+
+  async publishComparisonCompleted(event: ComparisonCompletedEvent): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Not connected to RabbitMQ');
+    }
+
+    try {
+      const message = Buffer.from(JSON.stringify(event));
+      const routingKey = 'comparison.completed';
+      
+      await this.channel.publish('comparisons', routingKey, message, {
+        persistent: true,
+        timestamp: Date.now(),
+        messageId: `comparison-${event.comparisonResult._id}-${Date.now()}`
+      });
+
+      console.log(`📤 Published comparison.completed event for submission: ${event.comparisonResult.submissionId}`);
+    } catch (error) {
+      console.error('❌ Error publishing comparison completed event:', error);
+      throw error;
+    }
   }
 
   async close(): Promise<void> {

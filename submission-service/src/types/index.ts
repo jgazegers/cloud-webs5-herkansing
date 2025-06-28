@@ -2,6 +2,9 @@ export interface ISubmission {
   competitionId: string;
   owner: string;
   submissionData: string; // base64 encoded image
+  similarityScore?: number; // Score from image comparison (0-100)
+  comparisonStatus?: 'pending' | 'completed' | 'failed'; // Status of comparison
+  comparisonError?: string; // Error message if comparison failed
 }
 
 export interface ISubmissionInput {
@@ -28,7 +31,7 @@ declare global {
   namespace Express {
     interface Request {
       username?: string;
-      file?: Express.Multer.File; // Use multer's File type for uploaded files
+      file?: any; // Multer file type for uploaded files
     }
   }
 }

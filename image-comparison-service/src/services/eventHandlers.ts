@@ -1,13 +1,15 @@
 // src/services/eventHandlers.ts
 import { Competition, Submission, ComparisonResult } from '../models';
-import { CompetitionCreatedEvent, SubmissionCreatedEvent } from '../messageQueue';
+import { CompetitionCreatedEvent, SubmissionCreatedEvent, ComparisonCompletedEvent, MessageQueue } from '../messageQueue';
 import { ImaggaService } from './imaggaService';
 
 export class EventHandlers {
   private imaggaService: ImaggaService;
+  private messageQueue: MessageQueue;
 
-  constructor() {
+  constructor(messageQueue: MessageQueue) {
     this.imaggaService = new ImaggaService();
+    this.messageQueue = messageQueue;
   }
   
   /**
@@ -106,6 +108,9 @@ export class EventHandlers {
           status: 'failed',
           errorMessage: errorMsg
         });
+        
+        // Publish comparison failed event
+        await this.publishComparisonResult(comparisonResult._id, 'failed');
         return;
       }
 
@@ -118,6 +123,9 @@ export class EventHandlers {
           status: 'failed',
           errorMessage: errorMsg
         });
+        
+        // Publish comparison failed event
+        await this.publishComparisonResult(comparisonResult._id, 'failed');
         return;
       }
 
@@ -137,6 +145,9 @@ export class EventHandlers {
 
       console.log(`💾 Saved comparison result for submission: ${comparisonResult.submissionId} with score: ${comparisonResponse.score}%`);
       
+      // Publish comparison completed event
+      await this.publishComparisonResult(comparisonResult._id, 'completed');
+      
     } catch (error) {
       console.error(`❌ Error during image comparison for submission ${comparisonResult.submissionId}:`, error);
       
@@ -146,8 +157,48 @@ export class EventHandlers {
         errorMessage: error instanceof Error ? error.message : 'Unknown error during image comparison'
       });
       
+      // Publish comparison failed event
+      await this.publishComparisonResult(comparisonResult._id, 'failed');
+      
       // Don't re-throw the error to prevent the entire event handler from failing
       // This allows other submissions to continue processing
+    }
+  }
+
+  /**
+   * Publish comparison result event to message queue
+   */
+  private async publishComparisonResult(comparisonResultId: string, status: 'completed' | 'failed'): Promise<void> {
+    try {
+      // Fetch the complete comparison result from database
+      const comparisonResult = await ComparisonResult.findById(comparisonResultId);
+      if (!comparisonResult) {
+        console.error(`❌ Comparison result not found: ${comparisonResultId}`);
+        return;
+      }
+
+      // Create the event payload
+      const event: ComparisonCompletedEvent = {
+        comparisonResult: {
+          _id: comparisonResult._id as string,
+          submissionId: comparisonResult.submissionId,
+          competitionId: comparisonResult.competitionId,
+          score: comparisonResult.score,
+          status: comparisonResult.status as 'completed' | 'failed',
+          errorMessage: comparisonResult.errorMessage,
+          createdAt: comparisonResult.createdAt,
+          updatedAt: comparisonResult.updatedAt
+        }
+      };
+
+      // Publish the event
+      await this.messageQueue.publishComparisonCompleted(event);
+      
+      console.log(`📤 Published comparison ${status} event for submission: ${comparisonResult.submissionId}`);
+      
+    } catch (error) {
+      console.error(`❌ Error publishing comparison result event:`, error);
+      // Don't re-throw to avoid breaking the main comparison flow
     }
   }
 }

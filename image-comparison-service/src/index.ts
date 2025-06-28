@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3004;
 
 // Initialize services
 const messageQueue = new MessageQueue();
-const eventHandlers = new EventHandlers();
+const eventHandlers = new EventHandlers(messageQueue);
 const imaggaService = new ImaggaService();
 
 // Basic middleware

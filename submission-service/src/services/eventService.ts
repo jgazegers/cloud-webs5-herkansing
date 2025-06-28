@@ -1,17 +1,21 @@
-import { MessageQueue, CompetitionCreatedEvent, SubmissionCreatedEvent } from "../messageQueue";
+import { MessageQueue, CompetitionCreatedEvent, SubmissionCreatedEvent, ComparisonCompletedEvent } from "../messageQueue";
 import { ValidCompetition } from "../models";
+import { ComparisonEventHandler } from "./comparisonEventHandler";
 
 export class EventService {
   private messageQueue: MessageQueue;
+  private comparisonEventHandler: ComparisonEventHandler;
 
   constructor() {
     this.messageQueue = new MessageQueue();
+    this.comparisonEventHandler = new ComparisonEventHandler();
   }
 
   async initialize(): Promise<void> {
     try {
       await this.messageQueue.connect();
       await this.messageQueue.subscribeToCompetitionEvents(this.handleCompetitionCreated);
+      await this.messageQueue.subscribeToComparisonEvents(this.handleComparisonCompleted);
     } catch (error) {
       console.error("Failed to connect to RabbitMQ during startup:", error);
       console.log("🚨 Service will continue without messaging. Competition validation will rely on existing cache only.");
@@ -50,6 +54,11 @@ export class EventService {
       console.error('Failed to publish submission created event:', error);
       // Don't throw - we don't want submission creation to fail if messaging fails
     }
+  }
+
+  // Function to handle comparison completed events
+  private handleComparisonCompleted = async (event: ComparisonCompletedEvent): Promise<void> => {
+    await this.comparisonEventHandler.handleComparisonCompleted(event);
   }
 
   async close(): Promise<void> {

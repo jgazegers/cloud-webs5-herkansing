@@ -33,6 +33,19 @@ export interface SubmissionCreatedEvent {
   };
 }
 
+export interface ComparisonCompletedEvent {
+  comparisonResult: {
+    _id: string;
+    submissionId: string;
+    competitionId: string;
+    score: number;
+    status: 'completed' | 'failed';
+    errorMessage?: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
+
 export class MessageQueue {
   private channelModel: amqp.ChannelModel | null = null;
   private channel: amqp.Channel | null = null;
@@ -53,6 +66,8 @@ export class MessageQueue {
         await this.channel.assertExchange('competitions', 'topic', { durable: true });
         // Declare the exchange for submission events
         await this.channel.assertExchange('submissions', 'topic', { durable: true });
+        // Declare the exchange for comparison events
+        await this.channel.assertExchange('comparisons', 'topic', { durable: true });
         
         console.log('✅ Connected to RabbitMQ successfully');
         return;
@@ -118,6 +133,36 @@ export class MessageQueue {
     });
 
     console.log(`Published submission.created event for ID: ${event.submission._id}`);
+  }
+
+  async subscribeToComparisonEvents(callback: (event: ComparisonCompletedEvent) => Promise<void>): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Not connected to RabbitMQ');
+    }
+
+    // Create a queue for the submission service to receive comparison events
+    const queueName = 'submission-service-comparisons';
+    await this.channel.assertQueue(queueName, { durable: true });
+    
+    // Bind queue to exchange for comparison.completed events
+    await this.channel.bindQueue(queueName, 'comparisons', 'comparison.completed');
+
+    // Set up consumer
+    await this.channel.consume(queueName, async (msg) => {
+      if (msg) {
+        try {
+          const event: ComparisonCompletedEvent = JSON.parse(msg.content.toString());
+          await callback(event);
+          this.channel!.ack(msg);
+          console.log(`✅ Processed comparison.completed event for submission: ${event.comparisonResult.submissionId}`);
+        } catch (error) {
+          console.error('❌ Error processing comparison message:', error);
+          this.channel!.nack(msg, false, false); // Don't requeue failed messages
+        }
+      }
+    });
+
+    console.log('📢 Subscribed to comparison events');
   }
 
   async close(): Promise<void> {
