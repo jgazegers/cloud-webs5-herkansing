@@ -1,2 +1,2 @@
 ### Test API gateway is running
-GET http://localhost:3000
+GET {{apiGatewayUrl}}

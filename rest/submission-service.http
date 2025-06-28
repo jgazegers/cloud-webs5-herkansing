@@ -9,134 +9,13 @@
 ###
 
 ### Create a new submission via API Gateway (requires external JWT token)
-POST http://localhost:3000/api/submissions
+POST {{apiGatewayUrl}}/api/submissions
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRlc3QgTWNUZXN0IiwiaWF0IjoxNzUxMDQwODkzLCJleHAiOjE3NTEwNDQ0OTN9.IsMLMAA7OeBuGU_4f3Ty3_wP-SyUSe0JJM6RlPWEE5k
+Authorization: Bearer {{externalToken}}
 
 {
-    "competitionId": "675f1234567890abcdef1234",
-    "submissionData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-}
-
-### Create submission with different image format via API Gateway
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer YOUR_EXTERNAL_JWT_TOKEN_HERE
-
-{
-    "competitionId": "675f5678901234567890abcd",
-    "submissionData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-}
-
-### Create submission with text data via API Gateway
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer YOUR_EXTERNAL_JWT_TOKEN_HERE
-
-{
-    "competitionId": "675f9012345678901234567e",
-    "submissionData": "data:text/plain;base64,VGhpcyBpcyBhIHRleHQgc3VibWlzc2lvbiBmb3IgdGhlIGNvbXBldGl0aW9u"
+    "competitionId": "{{validCompetitionId}}",
+    "submissionData": "{{imageData}}"
 }
 
 ###
-### DIRECT SERVICE ACCESS (For development/testing only)
-### These routes bypass the API Gateway and go directly to the service
-### Requires internal JWT tokens (JWT_SECRET_INTERNAL)
-###
-
-### Create a new submission (direct access - requires internal JWT token)
-POST http://localhost:3003
-Content-Type: application/json
-Authorization: Bearer YOUR_INTERNAL_JWT_TOKEN_HERE
-
-{
-    "competitionId": "675f1234567890abcdef1234",
-    "submissionData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-}
-
-###
-### VALIDATION TESTS
-###
-
-### Create submission with invalid competition ID (should fail)
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer YOUR_EXTERNAL_JWT_TOKEN_HERE
-
-{
-    "competitionId": "675f9999999999999999999f",
-    "submissionData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QFLQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-}
-
-### Create submission with missing required fields (should fail)
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer YOUR_EXTERNAL_JWT_TOKEN_HERE
-
-{
-    "competitionId": "675f1234567890abcdef1234"
-    // Missing submissionData
-}
-
-### Create submission with missing competitionId (should fail)
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer YOUR_EXTERNAL_JWT_TOKEN_HERE
-
-{
-    "submissionData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-    // Missing competitionId
-}
-
-### Create submission without authentication (should fail with 401)
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-
-{
-    "competitionId": "675f1234567890abcdef1234",
-    "submissionData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QFLQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-}
-
-### Create submission with invalid JWT token (should fail with 403)
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer invalid.jwt.token
-
-{
-    "competitionId": "675f1234567890abcdef1234",
-    "submissionData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QFLQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-}
-
-###
-### DIFFERENT SUBMISSION DATA TYPES
-###
-
-### Submit a large image (testing size limits)
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRlc3QgTWNUZXN0IiwiaWF0IjoxNzUxMDQwMjI2LCJleHAiOjE3NTEwNDM4MjZ9.vDZsRzQaWBj9hlRBxTo7rOT7q5J37FFwOSEbQN6hnXc
-
-{
-    "competitionId": "675f1234567890abcdef1234",
-    "submissionData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QFLQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-}
-
-### Submit video data
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer YOUR_EXTERNAL_JWT_TOKEN_HERE
-
-{
-    "competitionId": "675f1234567890abcdef1234",
-    "submissionData": "data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDE="
-}
-
-### Submit JSON data (for data-based competitions)
-POST http://localhost:3000/api/submissions
-Content-Type: application/json
-Authorization: Bearer YOUR_EXTERNAL_JWT_TOKEN_HERE
-
-{
-    "competitionId": "675f1234567890abcdef1234",
-    "submissionData": "data:application/json;base64,eyJyZXN1bHQiOiAiNDIiLCAiY29tcHV0YXRpb25fdGltZSI6ICIwLjAwNXMiLCAiYWxnb3JpdGhtIjogImdyZWVkeSJ9"
-}
