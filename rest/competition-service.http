@@ -7,7 +7,7 @@
 ### Create a new competition via API Gateway (requires external JWT token)
 POST http://localhost:3000/api/competitions
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRlc3QgTWNUZXN0IiwiaWF0IjoxNzUxMDMwNjQ0LCJleHAiOjE3NTEwMzQyNDR9.hv24K5opaCD-f_ZmmV_HtA1b0B3fLddfWAz4CUgORk4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRlc3QgTWNUZXN0IiwiaWF0IjoxNzUxMTExNjg3LCJleHAiOjE3NTExMTUyODd9.D5c7hnm_np9efm5MTDSm9n_FTFNp9-qratcChtaCa7E
 
 {
     "title": "Photo Hunt Challenge",

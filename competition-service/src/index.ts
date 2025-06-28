@@ -2,6 +2,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 import express, { Request } from "express";
 import jwt from "jsonwebtoken";
+import { MessageQueue, CompetitionCreatedEvent } from "./messageQueue";
 
 // Extend Express Request interface to include 'username'
 declare global {
@@ -141,6 +142,9 @@ export const authenticateInternalToken = (req: any, res: any, next: any) => {
 
 const app = express();
 
+// Initialize message queue
+const messageQueue = new MessageQueue();
+
 // Connect to MongoDB
 mongoose
   .connect(
@@ -154,6 +158,21 @@ mongoose
     process.exit(1);
   });
 
+// Connect to RabbitMQ with startup retry logic
+async function initializeMessageQueue() {
+  try {
+    await messageQueue.connect();
+  } catch (error) {
+    console.error("Failed to connect to RabbitMQ during startup:", error);
+    console.log(
+      "🚨 Service will continue without messaging. Competitions will be created but events won't be published."
+    );
+  }
+}
+
+// Initialize message queue in background
+initializeMessageQueue();
+
 app.use(express.json());
 
 app.post("/", authenticateInternalToken, async (req, res) => {
@@ -164,10 +183,43 @@ app.post("/", authenticateInternalToken, async (req, res) => {
       owner: req.username, // Set owner from JWT token
     });
     await competition.save();
+
+    // Publish competition created event
+    const event: CompetitionCreatedEvent = {
+      competitionId: (competition._id as mongoose.Types.ObjectId).toString(),
+      title: competition.title,
+      owner: competition.owner,
+      createdAt: new Date(),
+    };
+
+    try {
+      await messageQueue.publishCompetitionCreated(event);
+    } catch (mqError) {
+      console.error("Failed to publish competition created event:", mqError);
+      // Don't fail the request if message publishing fails
+      // In production, you might want to store this in a dead letter queue
+      console.log(
+        "🚨 Competition created but event not published. Manual intervention may be required."
+      );
+    }
+
     res.status(201).json(competition);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+});
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, shutting down gracefully");
+  await messageQueue.close();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT received, shutting down gracefully");
+  await messageQueue.close();
+  process.exit(0);
 });
 
 app.listen(3002, () => {

@@ -7,10 +7,28 @@ services:
     ports:
       - "27017:27017"
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP port
+      - "15672:15672"   # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   api-gateway:
     build:
       context: ./api-gateway
-      dockerfile: ../shared/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     container_name: api-gateway
     ports:
       - "3000:3000"
@@ -24,7 +42,7 @@ services:
   user-service:
     build:
       context: ./user-service
-      dockerfile: ../shared/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     container_name: user-service
     ports:
       - "3001:3001"
@@ -35,12 +53,15 @@ services:
       - ./user-service:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      - mongo
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   competition-service:
     build:
       context: ./competition-service
-      dockerfile: ../shared/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     container_name: competition-service
     ports:
       - "3002:3002"
@@ -51,12 +72,15 @@ services:
       - ./competition-service:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      - mongo
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   submission-service:
     build:
       context: ./submission-service
-      dockerfile: ../shared/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     container_name: submission-service
     ports:
       - "3003:3003"
@@ -67,7 +91,11 @@ services:
       - ./submission-service:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      - mongo
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   mongo-data:
+  rabbitmq-data:

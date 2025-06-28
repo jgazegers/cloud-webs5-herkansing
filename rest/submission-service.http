@@ -58,6 +58,16 @@ Authorization: Bearer YOUR_INTERNAL_JWT_TOKEN_HERE
 ### VALIDATION TESTS
 ###
 
+### Create submission with invalid competition ID (should fail)
+POST http://localhost:3000/api/submissions
+Content-Type: application/json
+Authorization: Bearer YOUR_EXTERNAL_JWT_TOKEN_HERE
+
+{
+    "competitionId": "675f9999999999999999999f",
+    "submissionData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QFLQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+}
+
 ### Create submission with missing required fields (should fail)
 POST http://localhost:3000/api/submissions
 Content-Type: application/json

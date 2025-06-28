@@ -14,7 +14,9 @@
     "tsx": "^4.20.3"
   },
   "dependencies": {
+    "@types/amqplib": "^0.10.7",
     "@types/jsonwebtoken": "^9.0.10",
+    "amqplib": "^0.10.8",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1"
