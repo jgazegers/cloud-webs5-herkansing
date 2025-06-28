@@ -4,8 +4,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface ISubmission extends Document {
   _id: string;
   competitionId: string;
-  owner: string;
-  submissionData: string; // base64 encoded image
+  submissionData: string; // base64 encoded image - the only data we need for comparison
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,10 +15,6 @@ const SubmissionSchema: Schema = new Schema({
     required: true
   },
   competitionId: {
-    type: String,
-    required: true
-  },
-  owner: {
     type: String,
     required: true
   },

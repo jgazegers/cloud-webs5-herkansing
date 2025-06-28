@@ -5,10 +5,11 @@ An asynchronous microservice that listens to competition and submission events t
 ## Overview
 
 This service:
-- Listens to `competition.created` events to store competition target images
-- Listens to `submission.created` events to compare submission images with target images
+- Listens to `competition.created` events to store competition IDs and target images
+- Listens to `submission.created` events to store submission IDs and images for comparison
 - Uses the Imagga API for image similarity analysis (configurable)
-- Stores comparison results in MongoDB for future reference
+- Stores only essential data: IDs and image data required for comparison
+- Maintains comparison results and scores in MongoDB
 
 ## Features
 
@@ -43,11 +44,11 @@ PORT=3004
 ## Event Handling
 
 ### Competition Created Events
-- Stores competition data locally including target image
+- Stores competition ID and target image only (minimal data footprint)
 - Prepares for future image comparisons
 
 ### Submission Created Events
-- Stores submission data locally
+- Stores submission ID, competition ID, and submission image only
 - Creates a comparison task record
 - Will trigger Imagga API comparison (when implemented)
 

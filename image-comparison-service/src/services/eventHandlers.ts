@@ -9,20 +9,12 @@ export class EventHandlers {
    */
   async handleCompetitionCreated(event: CompetitionCreatedEvent): Promise<void> {
     try {
-      console.log(`📥 Processing competition created event for: ${event.competition.title}`);
+      console.log(`📥 Processing competition created event for: ${event.competition._id}`);
       
-      // Store competition data locally for future reference
+      // Store only essential data: ID and target image for comparison
       const competition = new Competition({
         _id: event.competition._id,
-        title: event.competition.title,
-        description: event.competition.description,
-        targetImage: event.competition.targetImage,
-        location: event.competition.location,
-        startDate: event.competition.startDate,
-        endDate: event.competition.endDate,
-        owner: event.competition.owner,
-        createdAt: event.competition.createdAt,
-        updatedAt: event.competition.updatedAt
+        targetImage: event.competition.targetImage
       });
 
       // Use upsert to avoid duplicates
@@ -32,7 +24,7 @@ export class EventHandlers {
         { upsert: true, new: true }
       );
 
-      console.log(`✅ Stored competition: ${event.competition._id} - ${event.competition.title}`);
+      console.log(`✅ Stored competition target image for: ${event.competition._id}`);
     } catch (error) {
       console.error(`❌ Error handling competition created event:`, error);
       throw error;
@@ -46,14 +38,11 @@ export class EventHandlers {
     try {
       console.log(`📥 Processing submission created event for submission: ${event.submission._id}`);
       
-      // Store submission data locally
+      // Store only essential data: IDs and submission image for comparison
       const submission = new Submission({
         _id: event.submission._id,
         competitionId: event.submission.competitionId,
-        owner: event.submission.owner,
-        submissionData: event.submission.submissionData,
-        createdAt: event.submission.createdAt,
-        updatedAt: event.submission.updatedAt
+        submissionData: event.submission.submissionData
       });
 
       // Use upsert to avoid duplicates
@@ -63,7 +52,7 @@ export class EventHandlers {
         { upsert: true, new: true }
       );
 
-      // Check if we have the competition data
+      // Check if we have the competition target image
       const competition = await Competition.findById(event.submission.competitionId);
       if (!competition) {
         console.warn(`⚠️ Competition ${event.submission.competitionId} not found for submission ${event.submission._id}`);
@@ -80,7 +69,7 @@ export class EventHandlers {
       await comparisonResult.save();
 
       console.log(`✅ Created comparison task for submission: ${event.submission._id}`);
-      console.log(`🎯 Will compare against competition: ${competition.title}`);
+      console.log(`🎯 Will compare against competition: ${competition._id}`);
       
       // TODO: In the next phase, we'll call the Imagga API here
       // For now, we just log that the comparison would happen
