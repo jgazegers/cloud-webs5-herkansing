@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import { IUser, IUserInput, User } from "./models/User";
 import mongoose from "mongoose";
@@ -82,8 +85,9 @@ const startServer = async () => {
     res.status(200).json({ status: "ok" });
   });
 
-  app.listen(3001, () => {
-    console.log("Users service connected");
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Users service connected on port ${PORT}`);
   });
 };
 

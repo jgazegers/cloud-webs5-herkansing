@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import jwt from "jsonwebtoken";
@@ -13,7 +16,7 @@ const serviceRegistry = new ServiceRegistry();
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Remove old hardcoded services - now managed by ServiceRegistry
 // const services = { ... }

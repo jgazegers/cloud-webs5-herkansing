@@ -1,4 +1,7 @@
 // src/index.ts
+import dotenv from "dotenv";
+dotenv.config();
+
 import { connectDatabase } from './config/database';
 import { MessageQueue } from './messageQueue';
 import { WinnerService } from './services/winnerService';

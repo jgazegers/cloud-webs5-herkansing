@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import { MessageQueue } from "./messageQueue";
 import { connectToDatabase } from "./config/database";
@@ -51,7 +54,7 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-const PORT = 3002;
+const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
   console.log(`Competition service running on port ${PORT}`);
 });
