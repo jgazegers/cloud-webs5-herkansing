@@ -2,7 +2,16 @@
 ### USER SERVICE API TESTS (via API Gateway)
 ###
 
-### Register a new user
+### Register a new user (Competition Owner)
+POST {{apiGatewayUrl}}/api/users/register
+Content-Type: application/json
+
+{
+    "username": "CompetitionOwner",
+    "password": "SecurePassword"
+}
+
+### Register a new user (Submission Owner)
 POST {{apiGatewayUrl}}/api/users/register
 Content-Type: application/json
 

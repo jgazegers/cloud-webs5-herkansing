@@ -9,6 +9,7 @@ export const deleteCompetition = (messageQueue: MessageQueue) => {
       const username = (req as any).username;
 
       if (!username) {
+        console.log(`⚠️  Delete competition failed - No authentication provided`);
         res.status(401).json({ error: "Authentication required" });
         return;
       }
@@ -16,12 +17,14 @@ export const deleteCompetition = (messageQueue: MessageQueue) => {
       // Find the competition
       const competition = await Competition.findById(competitionId);
       if (!competition) {
+        console.log(`⚠️  Delete competition failed - Competition not found: ${competitionId}`);
         res.status(404).json({ error: "Competition not found" });
         return;
       }
 
       // Check if user is the owner
       if (competition.owner !== username) {
+        console.log(`⚠️  Delete competition failed - User ${username} is not the owner of competition ${competitionId} (owner: ${competition.owner})`);
         res.status(403).json({ error: "Only the competition owner can delete the competition" });
         return;
       }
@@ -39,8 +42,9 @@ export const deleteCompetition = (messageQueue: MessageQueue) => {
 
       try {
         await messageQueue.publishCompetitionDeleted(event);
+        console.log(`✅ Competition deleted successfully: "${competition.title}" (ID: ${competition._id})`);
       } catch (mqError) {
-        console.error("Failed to publish competition deleted event:", mqError);
+        console.error("❌ Failed to publish competition deleted event:", mqError);
         console.log("🚨 Competition deleted but event not published. Manual intervention may be required.");
       }
 
@@ -54,7 +58,7 @@ export const deleteCompetition = (messageQueue: MessageQueue) => {
         },
       });
     } catch (error) {
-      console.error("Error deleting competition:", error);
+      console.error("❌ Error deleting competition:", error);
       res.status(500).json({ error: "Failed to delete competition" });
     }
   };

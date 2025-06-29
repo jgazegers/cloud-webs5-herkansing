@@ -41,7 +41,7 @@ Content-Disposition: form-data; name="endDate"
 2026-06-28T18:00:00.000Z
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
-### Create a new competition that starts soon
+### Create a new competition that starts in the past (should fail)
 POST {{apiGatewayUrl}}/api/competitions
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 Authorization: Bearer {{competitionOwnerExternalToken}}
@@ -80,36 +80,6 @@ Content-Disposition: form-data; name="endDate"
 2025-06-28T19:58:00.000Z
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
-### Stop a competition manually (owner only)
-PATCH {{apiGatewayUrl}}/api/competitions/{{validCompetitionId}}/stop
-Authorization: Bearer {{competitionOwnerExternalToken}}
-
-###
-### Create a competition without dates (runs indefinitely)
-POST {{apiGatewayUrl}}/api/competitions
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Authorization: Bearer {{competitionOwnerExternalToken}}
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="title"
-
-Indefinite Photo Challenge
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="description"
-
-This competition runs until manually stopped by the owner
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="location"
-
-{"name": "Downtown Area", "coordinates": {"latitude": 40.7589, "longitude": -73.9851}}
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="targetImage"; filename="target.jpg"
-Content-Type: image/jpeg
-
-< ./test-images/target.jpg
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
-
-###
 ### Create a competition with only start date
 POST {{apiGatewayUrl}}/api/competitions
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
@@ -138,7 +108,30 @@ Content-Type: image/jpeg
 < ./test-images/target.jpg
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
-###
+### Create a competition without dates (runs indefinitely)
+POST {{apiGatewayUrl}}/api/competitions
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer {{competitionOwnerExternalToken}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+Indefinite Photo Challenge
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+This competition runs until manually stopped by the owner
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="location"
+
+{"name": "Downtown Area", "coordinates": {"latitude": 40.7589, "longitude": -73.9851}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="targetImage"; filename="target.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/target.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
 ### Get all competitions
 GET {{apiGatewayUrl}}/api/competitions
 Authorization: Bearer {{submissionOwnerExternalToken}}
@@ -182,8 +175,9 @@ Authorization: Bearer {{submissionOwnerExternalToken}}
 ### Get competitions with status filter (including stopped)
 GET {{apiGatewayUrl}}/api/competitions?status=stopped
 
-### Manually trigger winner selection for a specific competition
-POST http://localhost:3005/trigger-winner-selection/{{validCompetitionId}}
+### Stop a competition manually (owner only)
+PATCH {{apiGatewayUrl}}/api/competitions/{{validCompetitionId}}/stop
+Authorization: Bearer {{competitionOwnerExternalToken}}
 
 ### Delete a competition (owner only)
 DELETE {{apiGatewayUrl}}/api/competitions/{{validCompetitionId}}
@@ -192,5 +186,3 @@ Authorization: Bearer {{competitionOwnerExternalToken}}
 ### Try to delete competition as non-owner (should fail)
 DELETE {{apiGatewayUrl}}/api/competitions/{{validCompetitionId}}
 Authorization: Bearer {{submissionOwnerExternalToken}}
-
-###

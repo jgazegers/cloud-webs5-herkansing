@@ -58,7 +58,7 @@ export class MessageQueue {
     while (retries < this.maxRetries) {
       try {
         const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://admin:password@rabbitmq:5672';
-        console.log(`Attempting to connect to RabbitMQ (attempt ${retries + 1}/${this.maxRetries})...`);
+        console.log(`🔌 Attempting to connect to RabbitMQ (attempt ${retries + 1}/${this.maxRetries})...`);
         
         this.channelModel = await amqp.connect(rabbitmqUrl);
         this.channel = await this.channelModel.createChannel();
@@ -100,7 +100,7 @@ export class MessageQueue {
       timestamp: Date.now(),
     });
 
-    console.log(`Published competition.created event for ID: ${event.competition._id}`);
+    console.log(`📤 Published competition.created event for ID: ${event.competition._id}`);
   }
 
   async publishCompetitionStopped(event: CompetitionStoppedEvent): Promise<void> {
@@ -116,7 +116,7 @@ export class MessageQueue {
       timestamp: Date.now(),
     });
 
-    console.log(`Published competition.stopped event for ID: ${event.competitionId}`);
+    console.log(`📤 Published competition.stopped event for ID: ${event.competitionId}`);
   }
 
   async publishCompetitionDeleted(event: CompetitionDeletedEvent): Promise<void> {
@@ -132,7 +132,7 @@ export class MessageQueue {
       timestamp: Date.now(),
     });
 
-    console.log(`Published competition.deleted event for ID: ${event.competitionId}`);
+    console.log(`📤 Published competition.deleted event for ID: ${event.competitionId}`);
   }
 
   async setupWinnerConsumer(onWinnerSelected: (event: WinnerSelectedEvent) => Promise<void>): Promise<void> {
@@ -151,8 +151,9 @@ export class MessageQueue {
           const event: WinnerSelectedEvent = JSON.parse(msg.content.toString());
           await onWinnerSelected(event);
           this.channel!.ack(msg);
+          console.log(`✅ Processed winner.selected event for competition: ${event.competitionId}`);
         } catch (error) {
-          console.error('Error processing winner.selected event:', error);
+          console.error('❌ Error processing winner.selected event:', error);
           this.channel!.nack(msg, false, false); // Don't requeue
         }
       }
@@ -162,11 +163,17 @@ export class MessageQueue {
   }
 
   async close(): Promise<void> {
-    if (this.channel) {
-      await this.channel.close();
-    }
-    if (this.channelModel) {
-      await this.channelModel.close();
+    try {
+      if (this.channel) {
+        await this.channel.close();
+        console.log('✅ RabbitMQ channel closed');
+      }
+      if (this.channelModel) {
+        await this.channelModel.close();
+        console.log('✅ RabbitMQ connection closed');
+      }
+    } catch (error) {
+      console.error('❌ Error closing RabbitMQ connection:', error);
     }
   }
 }

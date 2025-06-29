@@ -18,6 +18,22 @@ Content-Type: image/jpeg
 < ./test-images/submission-1.jpg
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
+### Create a new submission with the same image (should fail)
+POST {{apiGatewayUrl}}/api/submissions
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="competitionId"
+
+{{validCompetitionId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="submissionData"; filename="target.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/target.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
 ### Get submissions for a specific competition
 GET {{apiGatewayUrl}}/api/submissions/competition/{{validCompetitionId}}
 Authorization: Bearer {{submissionOwnerExternalToken}}
@@ -41,19 +57,3 @@ Authorization: Bearer {{competitionOwnerExternalToken}}
 ### Try to delete submission as unauthorized user (should fail)
 DELETE {{apiGatewayUrl}}/api/submissions/{{validSubmissionId}}
 Authorization: Bearer {{competitionOwnerExternalToken}}
-
-### Create a new submission with the same image
-POST {{apiGatewayUrl}}/api/submissions
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Authorization: Bearer {{submissionOwnerExternalToken}}
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="competitionId"
-
-{{validCompetitionId}}
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="submissionData"; filename="target.jpg"
-Content-Type: image/jpeg
-
-< ./test-images/target.jpg
-------WebKitFormBoundary7MA4YWxkTrZu0gW--

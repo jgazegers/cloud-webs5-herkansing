@@ -10,6 +10,7 @@ export const getCompetitionsByUser = async (req: Request, res: Response) => {
       .select("-__v")
       .sort({ createdAt: -1 });
 
+    console.log(`✅ Retrieved ${competitions.length} competitions for user: ${username}`);
     res.status(200).json({
       owner: username,
       totalCompetitions: competitions.length,
@@ -25,7 +26,7 @@ export const getCompetitionsByUser = async (req: Request, res: Response) => {
       }),
     });
   } catch (error) {
-    console.error("Error retrieving user competitions:", error);
+    console.error("❌ Error retrieving user competitions:", error);
     res.status(500).json({ error: "Failed to retrieve user competitions" });
   }
 };

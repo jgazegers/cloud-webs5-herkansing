@@ -16,6 +16,7 @@ export const createCompetition = (messageQueue: MessageQueue) => {
       // Validate required fields
       const fieldError = validateRequiredFields(competitionData, targetImageBase64);
       if (fieldError) {
+        console.log(`⚠️  Validation failed - Missing required fields: ${fieldError}`);
         res.status(400).json({ error: fieldError });
         return;
       }
@@ -23,6 +24,7 @@ export const createCompetition = (messageQueue: MessageQueue) => {
       // Validate image format and size
       const imageError = validateImage(targetImageBase64);
       if (imageError) {
+        console.log(`⚠️  Validation failed - Image validation error: ${imageError}`);
         res.status(400).json({ error: imageError });
         return;
       }
@@ -30,6 +32,7 @@ export const createCompetition = (messageQueue: MessageQueue) => {
       // Validate dates
       const dateError = validateDates(competitionData);
       if (dateError) {
+        console.log(`⚠️  Validation failed - Date validation error: ${dateError}`);
         res.status(400).json({ error: dateError });
         return;
       }
@@ -56,7 +59,7 @@ export const createCompetition = (messageQueue: MessageQueue) => {
         },
       });
     } catch (error: any) {
-      console.error("Error creating competition:", error);
+      console.error("❌ Error creating competition:", error);
       res.status(400).json({ error: error.message });
     }
   };
@@ -98,9 +101,18 @@ const processImageData = (req: Request): { competitionData: any; targetImageBase
 
 // Helper function to validate required fields
 const validateRequiredFields = (competitionData: any, targetImageBase64: string): string | null => {
-  if (!competitionData.title || !competitionData.description || !targetImageBase64) {
-    return "Missing required fields: title, description, and targetImage are required";
+  const missingFields: string[] = [];
+  
+  if (!competitionData.title) missingFields.push('title');
+  if (!competitionData.description) missingFields.push('description');
+  if (!targetImageBase64) missingFields.push('targetImage');
+  
+  if (missingFields.length > 0) {
+    console.log(`📝 Validation details - Missing fields: [${missingFields.join(', ')}]`);
+    return `Missing required fields: ${missingFields.join(', ')} are required`;
   }
+  
+  console.log(`✅ Required fields validation passed`);
   return null;
 };
 
@@ -108,19 +120,25 @@ const validateRequiredFields = (competitionData: any, targetImageBase64: string)
 const validateImage = (targetImageBase64: string): string | null => {
   // Validate base64 image format
   if (!isValidBase64Image(targetImageBase64)) {
+    console.log(`📝 Validation details - Invalid image format detected`);
     return "Invalid target image format. Please provide a valid base64-encoded image (JPEG, PNG, GIF, WebP, or BMP)";
   }
 
   // Check image size
   const imageInfo = getImageInfo(targetImageBase64);
   if (!imageInfo) {
+    console.log(`📝 Validation details - Failed to process image data`);
     return "Failed to process target image data";
   }
 
+  console.log(`📝 Validation details - Image info: type=${imageInfo.type}, size=${(imageInfo.size / 1024).toFixed(1)}KB`);
+
   if (imageInfo.size > MAX_IMAGE_SIZE) {
+    console.log(`📝 Validation details - Image too large: ${(imageInfo.size / (1024 * 1024)).toFixed(1)}MB > ${MAX_IMAGE_SIZE / (1024 * 1024)}MB`);
     return `Target image too large. Maximum size is ${MAX_IMAGE_SIZE / (1024 * 1024)}MB`;
   }
 
+  console.log(`✅ Image validation passed`);
   return null;
 };
 
@@ -128,6 +146,7 @@ const validateImage = (targetImageBase64: string): string | null => {
 const validateDates = (competitionData: any): string | null => {
   // If no dates are provided, competition runs indefinitely until manually stopped
   if (!competitionData.startDate && !competitionData.endDate) {
+    console.log(`📝 Date validation - No dates provided, competition will run indefinitely`);
     return null;
   }
 
@@ -136,18 +155,26 @@ const validateDates = (competitionData: any): string | null => {
   // If only startDate is provided
   if (competitionData.startDate && !competitionData.endDate) {
     const startDate = new Date(competitionData.startDate);
+    console.log(`📝 Date validation - Start date only: ${startDate.toISOString()}`);
+    
     if (startDate < now) {
+      console.log(`📝 Validation details - Start date ${startDate.toISOString()} is in the past (current: ${now.toISOString()})`);
       return "Start date cannot be in the past";
     }
+    console.log(`✅ Date validation passed - Start date only`);
     return null;
   }
 
   // If only endDate is provided
   if (!competitionData.startDate && competitionData.endDate) {
     const endDate = new Date(competitionData.endDate);
+    console.log(`📝 Date validation - End date only: ${endDate.toISOString()}`);
+    
     if (endDate <= now) {
+      console.log(`📝 Validation details - End date ${endDate.toISOString()} is not in the future (current: ${now.toISOString()})`);
       return "End date must be in the future";
     }
+    console.log(`✅ Date validation passed - End date only`);
     return null;
   }
 
@@ -155,14 +182,19 @@ const validateDates = (competitionData: any): string | null => {
   if (competitionData.startDate && competitionData.endDate) {
     const startDate = new Date(competitionData.startDate);
     const endDate = new Date(competitionData.endDate);
+    console.log(`📝 Date validation - Both dates: start=${startDate.toISOString()}, end=${endDate.toISOString()}`);
 
     if (startDate < now) {
+      console.log(`📝 Validation details - Start date ${startDate.toISOString()} is in the past (current: ${now.toISOString()})`);
       return "Start date cannot be in the past";
     }
 
     if (endDate <= startDate) {
+      console.log(`📝 Validation details - End date ${endDate.toISOString()} is not after start date ${startDate.toISOString()}`);
       return "End date must be after start date";
     }
+    
+    console.log(`✅ Date validation passed - Both dates valid`);
   }
 
   return null;
@@ -207,8 +239,9 @@ const publishCompetitionEvent = async (
 
   try {
     await messageQueue.publishCompetitionCreated(event);
+    console.log(`✅ Competition created successfully: "${competition.title}" (ID: ${competition._id})`);
   } catch (mqError) {
-    console.error("Failed to publish competition created event:", mqError);
+    console.error("❌ Failed to publish competition created event:", mqError);
     console.log(
       "🚨 Competition created but event not published. Manual intervention may be required."
     );

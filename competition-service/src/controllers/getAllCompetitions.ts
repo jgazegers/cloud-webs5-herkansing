@@ -99,6 +99,14 @@ export const getAllCompetitions = async (req: Request, res: Response) => {
       .select("-__v")
       .sort({ createdAt: -1 });
 
+    console.log(`✅ Retrieved ${competitions.length} competitions with filters: ${JSON.stringify({
+      location: req.query.location || null,
+      owner: req.query.owner || null,
+      status: req.query.status || null,
+      startAfter: req.query.startAfter || null,
+      endBefore: req.query.endBefore || null,
+    })}`);
+
     res.status(200).json({
       totalCompetitions: competitions.length,
       appliedFilters: {
@@ -128,7 +136,7 @@ export const getAllCompetitions = async (req: Request, res: Response) => {
       }),
     });
   } catch (error) {
-    console.error("Error retrieving competitions:", error);
+    console.error("❌ Error retrieving competitions:", error);
     res.status(500).json({ error: "Failed to retrieve competitions" });
   }
 };

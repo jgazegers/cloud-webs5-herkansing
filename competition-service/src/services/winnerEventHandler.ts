@@ -43,7 +43,7 @@ export class WinnerEventHandler {
         - Selected At: ${selectedAt}`);
 
     } catch (error) {
-      console.error('Error handling winner.selected event:', error);
+      console.error('❌ Error handling winner.selected event:', error);
     }
   }
 }
