@@ -27,6 +27,8 @@ async function main() {
     await messageQueue.setupConsumers(
       eventHandlers.handleCompetitionCreated.bind(eventHandlers),
       eventHandlers.handleSubmissionCreated.bind(eventHandlers),
+      eventHandlers.handleSubmissionDeleted.bind(eventHandlers),
+      eventHandlers.handleCompetitionDeleted.bind(eventHandlers),
       eventHandlers.handleComparisonCompleted.bind(eventHandlers),
       eventHandlers.handleCompetitionStopped.bind(eventHandlers)
     );

@@ -4,7 +4,8 @@ import {
   getAllCompetitions, 
   getCompetitionById, 
   getCompetitionsByUser,
-  stopCompetition 
+  stopCompetition,
+  deleteCompetition 
 } from "../controllers";
 import { authenticateInternalToken } from "../middleware/auth";
 import { upload } from "../middleware/upload";
@@ -35,6 +36,13 @@ export function createCompetitionRoutes(messageQueue: MessageQueue): Router {
     "/:competitionId/stop",
     authenticateInternalToken,
     stopCompetition(messageQueue)
+  );
+
+  // Delete competition - requires authentication (owner only)
+  router.delete(
+    "/:competitionId",
+    authenticateInternalToken,
+    deleteCompetition(messageQueue)
   );
 
   return router;

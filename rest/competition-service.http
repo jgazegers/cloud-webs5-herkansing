@@ -185,4 +185,12 @@ GET {{apiGatewayUrl}}/api/competitions?status=stopped
 ### Manually trigger winner selection for a specific competition
 POST http://localhost:3005/trigger-winner-selection/{{validCompetitionId}}
 
+### Delete a competition (owner only)
+DELETE {{apiGatewayUrl}}/api/competitions/{{validCompetitionId}}
+Authorization: Bearer {{competitionOwnerExternalToken}}
+
+### Try to delete competition as non-owner (should fail)
+DELETE {{apiGatewayUrl}}/api/competitions/{{validCompetitionId}}
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
 ###

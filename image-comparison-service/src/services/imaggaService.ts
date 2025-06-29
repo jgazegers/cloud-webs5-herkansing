@@ -47,8 +47,6 @@ export class ImaggaService {
       console.log(`📷 Target image format: ${targetFormat}, Submission image format: ${submissionFormat}`);
       
       // Create basic auth header
-      // TODO: Remove
-      console.log(`${this.apiKey}:${this.apiSecret}`)
       const auth = Buffer.from(`${this.apiKey}:${this.apiSecret}`).toString('base64');
       
       // Use the images-similarity endpoint with general_v3 categorizer

@@ -5,6 +5,8 @@ import { ComparisonResult } from '../models/ComparisonResult';
 import { 
   CompetitionCreatedEvent, 
   SubmissionCreatedEvent, 
+  SubmissionDeletedEvent,
+  CompetitionDeletedEvent,
   ComparisonCompletedEvent,
   CompetitionStoppedEvent
 } from '../messageQueue';
@@ -167,6 +169,49 @@ export class EventHandlers {
 
     } catch (error) {
       console.error('Error handling competition.stopped event:', error);
+    }
+  }
+
+  /**
+   * Handle competition.deleted events
+   * Clean up competition data
+   */
+  async handleCompetitionDeleted(event: CompetitionDeletedEvent): Promise<void> {
+    try {
+      const { competitionId } = event;
+      
+      console.log(`🗑️ Processing competition deleted event for: ${competitionId}`);
+
+      // Delete all related data
+      await Competition.findByIdAndDelete(competitionId);
+      await Submission.deleteMany({ competitionId });
+      await ComparisonResult.deleteMany({ competitionId });
+
+      console.log(`✅ Cleaned up all data for deleted competition: ${competitionId}`);
+
+    } catch (error) {
+      console.error('Error handling competition.deleted event:', error);
+    }
+  }
+
+  /**
+   * Handle submission.deleted events
+   * Clean up submission data
+   */
+  async handleSubmissionDeleted(event: SubmissionDeletedEvent): Promise<void> {
+    try {
+      const { submission } = event;
+      
+      console.log(`🗑️ Processing submission deleted event for: ${submission._id}`);
+
+      // Delete the submission and related comparison results
+      await Submission.findByIdAndDelete(submission._id);
+      await ComparisonResult.deleteMany({ submissionId: submission._id });
+
+      console.log(`✅ Cleaned up data for deleted submission: ${submission._id}`);
+
+    } catch (error) {
+      console.error('Error handling submission.deleted event:', error);
     }
   }
 }

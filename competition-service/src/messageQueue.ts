@@ -30,6 +30,13 @@ export interface CompetitionStoppedEvent {
   stoppedAt: Date;
 }
 
+export interface CompetitionDeletedEvent {
+  competitionId: string;
+  title: string;
+  owner: string;
+  deletedAt: Date;
+}
+
 export interface WinnerSelectedEvent {
   competitionId: string;
   winnerSubmissionId: string;
@@ -110,6 +117,22 @@ export class MessageQueue {
     });
 
     console.log(`Published competition.stopped event for ID: ${event.competitionId}`);
+  }
+
+  async publishCompetitionDeleted(event: CompetitionDeletedEvent): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Not connected to RabbitMQ');
+    }
+
+    const routingKey = 'competition.deleted';
+    const message = Buffer.from(JSON.stringify(event));
+
+    this.channel.publish('competitions', routingKey, message, {
+      persistent: true,
+      timestamp: Date.now(),
+    });
+
+    console.log(`Published competition.deleted event for ID: ${event.competitionId}`);
   }
 
   async setupWinnerConsumer(onWinnerSelected: (event: WinnerSelectedEvent) => Promise<void>): Promise<void> {

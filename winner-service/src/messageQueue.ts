@@ -31,6 +31,13 @@ export interface CompetitionStoppedEvent {
   stoppedAt: Date;
 }
 
+export interface CompetitionDeletedEvent {
+  competitionId: string;
+  title: string;
+  owner: string;
+  deletedAt: Date;
+}
+
 export interface SubmissionCreatedEvent {
   submission: {
     _id: string;
@@ -39,6 +46,15 @@ export interface SubmissionCreatedEvent {
     submissionData: string;
     createdAt: Date;
     updatedAt: Date;
+  };
+}
+
+export interface SubmissionDeletedEvent {
+  submission: {
+    _id: string;
+    competitionId: string;
+    owner: string;
+    deletedAt: Date;
   };
 }
 
@@ -111,6 +127,8 @@ export class MessageQueue {
   async setupConsumers(
     onCompetitionCreated: (event: CompetitionCreatedEvent) => Promise<void>,
     onSubmissionCreated: (event: SubmissionCreatedEvent) => Promise<void>,
+    onSubmissionDeleted: (event: SubmissionDeletedEvent) => Promise<void>,
+    onCompetitionDeleted: (event: CompetitionDeletedEvent) => Promise<void>,
     onComparisonCompleted: (event: ComparisonCompletedEvent) => Promise<void>,
     onCompetitionStopped: (event: CompetitionStoppedEvent) => Promise<void>
   ): Promise<void> {
@@ -130,7 +148,9 @@ export class MessageQueue {
     // Bind queues to exchanges
     await this.channel.bindQueue(competitionQueue, 'competitions', 'competition.created');
     await this.channel.bindQueue(competitionQueue, 'competitions', 'competition.stopped');
+    await this.channel.bindQueue(competitionQueue, 'competitions', 'competition.deleted');
     await this.channel.bindQueue(submissionQueue, 'submissions', 'submission.created');
+    await this.channel.bindQueue(submissionQueue, 'submissions', 'submission.deleted');
     await this.channel.bindQueue(comparisonQueue, 'comparisons', 'comparison.completed');
 
     // Set up consumers
@@ -145,6 +165,9 @@ export class MessageQueue {
           } else if (routingKey === 'competition.stopped') {
             const event: CompetitionStoppedEvent = JSON.parse(msg.content.toString());
             await onCompetitionStopped(event);
+          } else if (routingKey === 'competition.deleted') {
+            const event: CompetitionDeletedEvent = JSON.parse(msg.content.toString());
+            await onCompetitionDeleted(event);
           }
           
           this.channel!.ack(msg);
@@ -158,11 +181,19 @@ export class MessageQueue {
     this.channel.consume(submissionQueue, async (msg) => {
       if (msg) {
         try {
-          const event: SubmissionCreatedEvent = JSON.parse(msg.content.toString());
-          await onSubmissionCreated(event);
+          const routingKey = msg.fields.routingKey;
+          
+          if (routingKey === 'submission.created') {
+            const event: SubmissionCreatedEvent = JSON.parse(msg.content.toString());
+            await onSubmissionCreated(event);
+          } else if (routingKey === 'submission.deleted') {
+            const event: SubmissionDeletedEvent = JSON.parse(msg.content.toString());
+            await onSubmissionDeleted(event);
+          }
+          
           this.channel!.ack(msg);
         } catch (error) {
-          console.error('Error processing submission.created event:', error);
+          console.error('Error processing submission event:', error);
           this.channel!.nack(msg, false, false); // Don't requeue
         }
       }

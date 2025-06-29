@@ -1,4 +1,4 @@
-import { MessageQueue, CompetitionCreatedEvent, SubmissionCreatedEvent, ComparisonCompletedEvent, CompetitionStoppedEvent, WinnerSelectedEvent } from "../messageQueue";
+import { MessageQueue, CompetitionCreatedEvent, SubmissionCreatedEvent, SubmissionDeletedEvent, CompetitionDeletedEvent, ComparisonCompletedEvent, CompetitionStoppedEvent, WinnerSelectedEvent } from "../messageQueue";
 import { ValidCompetition } from "../models";
 import { ComparisonEventHandler } from "./comparisonEventHandler";
 
@@ -16,7 +16,8 @@ export class EventService {
       await this.messageQueue.connect();
       await this.messageQueue.subscribeToCompetitionEvents(
         this.handleCompetitionCreated.bind(this),
-        this.handleCompetitionStopped.bind(this)
+        this.handleCompetitionStopped.bind(this),
+        this.handleCompetitionDeleted.bind(this)
       );
       await this.messageQueue.subscribeToComparisonEvents(this.handleComparisonCompleted);
       await this.messageQueue.subscribeToWinnerEvents(this.handleWinnerSelected.bind(this));
@@ -74,6 +75,24 @@ export class EventService {
     }
   }
 
+  // Function to handle competition deleted events
+  private async handleCompetitionDeleted(event: CompetitionDeletedEvent): Promise<void> {
+    try {
+      // Delete the competition from local cache
+      const deletedCompetition = await ValidCompetition.findOneAndDelete(
+        { competitionId: event.competitionId }
+      );
+
+      if (deletedCompetition) {
+        console.log(`Removed competition ${event.competitionId} from local cache (deleted)`);
+      } else {
+        console.log(`Competition ${event.competitionId} not found in local cache for deletion`);
+      }
+    } catch (error) {
+      console.error('Error handling competition deleted event:', error);
+    }
+  }
+
   // Function to handle winner selected events
   private async handleWinnerSelected(event: WinnerSelectedEvent): Promise<void> {
     try {
@@ -100,6 +119,15 @@ export class EventService {
     } catch (error) {
       console.error('Failed to publish submission created event:', error);
       // Don't throw - we don't want submission creation to fail if messaging fails
+    }
+  }
+
+  async publishSubmissionDeleted(event: SubmissionDeletedEvent): Promise<void> {
+    try {
+      await this.messageQueue.publishSubmissionDeleted(event);
+    } catch (error) {
+      console.error('Failed to publish submission deleted event:', error);
+      // Don't throw - we don't want submission deletion to fail if messaging fails
     }
   }
 

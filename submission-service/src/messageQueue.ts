@@ -41,6 +41,22 @@ export interface CompetitionStoppedEvent {
   stoppedAt: Date;
 }
 
+export interface CompetitionDeletedEvent {
+  competitionId: string;
+  title: string;
+  owner: string;
+  deletedAt: Date;
+}
+
+export interface SubmissionDeletedEvent {
+  submission: {
+    _id: string;
+    competitionId: string;
+    owner: string;
+    deletedAt: Date;
+  };
+}
+
 export interface ComparisonCompletedEvent {
   comparisonResult: {
     _id: string;
@@ -109,7 +125,8 @@ export class MessageQueue {
 
   async subscribeToCompetitionEvents(
     onCompetitionCreated: (event: CompetitionCreatedEvent) => Promise<void>,
-    onCompetitionStopped: (event: CompetitionStoppedEvent) => Promise<void>
+    onCompetitionStopped: (event: CompetitionStoppedEvent) => Promise<void>,
+    onCompetitionDeleted: (event: CompetitionDeletedEvent) => Promise<void>
   ): Promise<void> {
     if (!this.channel) {
       throw new Error('Not connected to RabbitMQ');
@@ -122,6 +139,7 @@ export class MessageQueue {
     // Bind queue to exchange for competition events
     await this.channel.bindQueue(queueName, 'competitions', 'competition.created');
     await this.channel.bindQueue(queueName, 'competitions', 'competition.stopped');
+    await this.channel.bindQueue(queueName, 'competitions', 'competition.deleted');
 
     // Set up consumer
     await this.channel.consume(queueName, async (msg) => {
@@ -137,6 +155,10 @@ export class MessageQueue {
             const event: CompetitionStoppedEvent = JSON.parse(msg.content.toString());
             await onCompetitionStopped(event);
             console.log(`Processed competition.stopped event for ID: ${event.competitionId}`);
+          } else if (routingKey === 'competition.deleted') {
+            const event: CompetitionDeletedEvent = JSON.parse(msg.content.toString());
+            await onCompetitionDeleted(event);
+            console.log(`Processed competition.deleted event for ID: ${event.competitionId}`);
           }
           
           this.channel!.ack(msg);
@@ -147,7 +169,7 @@ export class MessageQueue {
       }
     });
 
-    console.log('Subscribed to competition events (created and stopped)');
+    console.log('Subscribed to competition events (created, stopped, and deleted)');
   }
 
   async subscribeToWinnerEvents(callback: (event: WinnerSelectedEvent) => Promise<void>): Promise<void> {
@@ -194,6 +216,22 @@ export class MessageQueue {
     });
 
     console.log(`Published submission.created event for ID: ${event.submission._id}`);
+  }
+
+  async publishSubmissionDeleted(event: SubmissionDeletedEvent): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Not connected to RabbitMQ');
+    }
+
+    const routingKey = 'submission.deleted';
+    const message = Buffer.from(JSON.stringify(event));
+
+    this.channel.publish('submissions', routingKey, message, {
+      persistent: true,
+      timestamp: Date.now(),
+    });
+
+    console.log(`Published submission.deleted event for ID: ${event.submission._id}`);
   }
 
   async subscribeToComparisonEvents(callback: (event: ComparisonCompletedEvent) => Promise<void>): Promise<void> {

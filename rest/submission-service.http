@@ -27,8 +27,20 @@ GET {{apiGatewayUrl}}/api/submissions/{{validSubmissionId}}
 Authorization: Bearer {{submissionOwnerExternalToken}}
 
 ### Get current user's submissions
-GET {{apiGatewayUrl}}/api/submissions/my-submissions
+GET {{apiGatewayUrl}}/api/submissions/user/my-submissions
 Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Delete a submission (owner only)
+DELETE {{apiGatewayUrl}}/api/submissions/{{validSubmissionId}}
+Authorization: Bearer {{submissionOwnerExternalToken}}
+
+### Try to delete submission as competition owner
+DELETE {{apiGatewayUrl}}/api/submissions/{{validSubmissionId}}
+Authorization: Bearer {{competitionOwnerExternalToken}}
+
+### Try to delete submission as unauthorized user (should fail)
+DELETE {{apiGatewayUrl}}/api/submissions/{{validSubmissionId}}
+Authorization: Bearer {{competitionOwnerExternalToken}}
 
 ### Create a new submission with the same image
 POST {{apiGatewayUrl}}/api/submissions

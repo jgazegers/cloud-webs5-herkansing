@@ -34,6 +34,22 @@ export interface SubmissionCreatedEvent {
   };
 }
 
+export interface SubmissionDeletedEvent {
+  submission: {
+    _id: string;
+    competitionId: string;
+    owner: string;
+    deletedAt: Date;
+  };
+}
+
+export interface CompetitionDeletedEvent {
+  competitionId: string;
+  title: string;
+  owner: string;
+  deletedAt: Date;
+}
+
 export interface ComparisonCompletedEvent {
   comparisonResult: {
     _id: string;
@@ -88,7 +104,10 @@ export class MessageQueue {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async subscribeToCompetitionEvents(callback: (event: CompetitionCreatedEvent) => Promise<void>): Promise<void> {
+  async subscribeToCompetitionEvents(
+    onCompetitionCreated: (event: CompetitionCreatedEvent) => Promise<void>,
+    onCompetitionDeleted: (event: CompetitionDeletedEvent) => Promise<void>
+  ): Promise<void> {
     if (!this.channel) {
       throw new Error('Not connected to RabbitMQ');
     }
@@ -97,17 +116,27 @@ export class MessageQueue {
     const queueName = 'image-comparison-service-competitions';
     await this.channel.assertQueue(queueName, { durable: true });
     
-    // Bind queue to exchange for competition.created events
+    // Bind queue to exchange for competition events
     await this.channel.bindQueue(queueName, 'competitions', 'competition.created');
+    await this.channel.bindQueue(queueName, 'competitions', 'competition.deleted');
 
     // Set up consumer
     await this.channel.consume(queueName, async (msg) => {
       if (msg) {
         try {
-          const event: CompetitionCreatedEvent = JSON.parse(msg.content.toString());
-          await callback(event);
+          const routingKey = msg.fields.routingKey;
+          
+          if (routingKey === 'competition.created') {
+            const event: CompetitionCreatedEvent = JSON.parse(msg.content.toString());
+            await onCompetitionCreated(event);
+            console.log(`✅ Processed competition.created event for ID: ${event.competition._id}`);
+          } else if (routingKey === 'competition.deleted') {
+            const event: CompetitionDeletedEvent = JSON.parse(msg.content.toString());
+            await onCompetitionDeleted(event);
+            console.log(`✅ Processed competition.deleted event for ID: ${event.competitionId}`);
+          }
+          
           this.channel!.ack(msg);
-          console.log(`✅ Processed competition.created event for ID: ${event.competition._id}`);
         } catch (error) {
           console.error('❌ Error processing competition message:', error);
           this.channel!.nack(msg, false, false); // Don't requeue failed messages
@@ -115,10 +144,13 @@ export class MessageQueue {
       }
     });
 
-    console.log('📢 Subscribed to competition events');
+    console.log('📢 Subscribed to competition events (created and deleted)');
   }
 
-  async subscribeToSubmissionEvents(callback: (event: SubmissionCreatedEvent) => Promise<void>): Promise<void> {
+  async subscribeToSubmissionEvents(
+    onSubmissionCreated: (event: SubmissionCreatedEvent) => Promise<void>,
+    onSubmissionDeleted: (event: SubmissionDeletedEvent) => Promise<void>
+  ): Promise<void> {
     if (!this.channel) {
       throw new Error('Not connected to RabbitMQ');
     }
@@ -127,17 +159,27 @@ export class MessageQueue {
     const queueName = 'image-comparison-service-submissions';
     await this.channel.assertQueue(queueName, { durable: true });
     
-    // Bind queue to exchange for submission.created events
+    // Bind queue to exchange for submission events
     await this.channel.bindQueue(queueName, 'submissions', 'submission.created');
+    await this.channel.bindQueue(queueName, 'submissions', 'submission.deleted');
 
     // Set up consumer
     await this.channel.consume(queueName, async (msg) => {
       if (msg) {
         try {
-          const event: SubmissionCreatedEvent = JSON.parse(msg.content.toString());
-          await callback(event);
+          const routingKey = msg.fields.routingKey;
+          
+          if (routingKey === 'submission.created') {
+            const event: SubmissionCreatedEvent = JSON.parse(msg.content.toString());
+            await onSubmissionCreated(event);
+            console.log(`✅ Processed submission.created event for ID: ${event.submission._id}`);
+          } else if (routingKey === 'submission.deleted') {
+            const event: SubmissionDeletedEvent = JSON.parse(msg.content.toString());
+            await onSubmissionDeleted(event);
+            console.log(`✅ Processed submission.deleted event for ID: ${event.submission._id}`);
+          }
+          
           this.channel!.ack(msg);
-          console.log(`✅ Processed submission.created event for ID: ${event.submission._id}`);
         } catch (error) {
           console.error('❌ Error processing submission message:', error);
           this.channel!.nack(msg, false, false); // Don't requeue failed messages
@@ -145,7 +187,7 @@ export class MessageQueue {
       }
     });
 
-    console.log('📢 Subscribed to submission events');
+    console.log('📢 Subscribed to submission events (created and deleted)');
   }
 
   async publishComparisonCompleted(event: ComparisonCompletedEvent): Promise<void> {

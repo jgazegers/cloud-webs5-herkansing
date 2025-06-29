@@ -60,11 +60,13 @@ async function startServer() {
     
     // Set up event listeners
     await messageQueue.subscribeToCompetitionEvents(
-      (event) => eventHandlers.handleCompetitionCreated(event)
+      (event) => eventHandlers.handleCompetitionCreated(event),
+      (event) => eventHandlers.handleCompetitionDeleted(event)
     );
     
     await messageQueue.subscribeToSubmissionEvents(
-      (event) => eventHandlers.handleSubmissionCreated(event)
+      (event) => eventHandlers.handleSubmissionCreated(event),
+      (event) => eventHandlers.handleSubmissionDeleted(event)
     );
     
     console.log('🎉 All event subscriptions set up successfully');
