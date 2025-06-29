@@ -5,6 +5,7 @@ import express from "express";
 import { IUser, IUserInput, User } from "./models/User";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import { specs, swaggerUi } from "./config/swagger";
 
 const createUser = async (userData: IUserInput): Promise<IUser> => {
   const user = new User(userData);
@@ -32,6 +33,70 @@ const startServer = async () => {
     const app = express();
     app.use(express.json());
 
+    // Swagger documentation setup
+    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
+    // Health check endpoint
+    /**
+     * @swagger
+     * /health:
+     *   get:
+     *     summary: Health check endpoint
+     *     tags: [Health]
+     *     responses:
+     *       200:
+     *         description: Service is healthy
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/HealthCheck'
+     */
+    app.get('/health', (req, res) => {
+      res.status(200).json({
+        status: 'healthy',
+        service: 'user-service',
+        timestamp: new Date().toISOString()
+      });
+    });
+
+    /**
+     * @swagger
+     * /register:
+     *   post:
+     *     summary: Register a new user
+     *     tags: [Users]
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             $ref: '#/components/schemas/UserInput'
+     *     responses:
+     *       201:
+     *         description: User created successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/User'
+     *       400:
+     *         description: Invalid input
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Error'
+     *       409:
+     *         description: Username already exists
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Error'
+     *       500:
+     *         description: Server error
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Error'
+     */
     app.post("/register", async (req, res) => {
       try {
         const { username, password } = req.body;
@@ -51,6 +116,44 @@ const startServer = async () => {
       }
     });
 
+    /**
+     * @swagger
+     * /login:
+     *   post:
+     *     summary: Login user
+     *     tags: [Users]
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             $ref: '#/components/schemas/UserInput'
+     *     responses:
+     *       200:
+     *         description: Login successful
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/LoginResponse'
+     *       400:
+     *         description: Invalid input
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Error'
+     *       401:
+     *         description: Invalid credentials
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Error'
+     *       500:
+     *         description: Server error
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Error'
+     */
     app.post("/login", async (req, res) => {
       try {
         const { username, password } = req.body;
@@ -90,14 +193,6 @@ const startServer = async () => {
       }
     });
 
-    app.get("/health", (req, res) => {
-      res.status(200).json({ 
-        status: "healthy",
-        service: "user-service",
-        timestamp: new Date().toISOString()
-      });
-    });
-
     const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
       console.log(`✅ User Service started successfully`);
@@ -106,6 +201,9 @@ const startServer = async () => {
       console.log(`   • User registration and authentication`);
       console.log(`   • JWT token generation for external access`);
       console.log(`   • Health checks and status monitoring`);
+      console.log(`   • API documentation and testing with Swagger`);
+      console.log(`📊 Health check: http://localhost:${PORT}/health`);
+      console.log(`📚 API documentation: http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
     console.error("❌ Failed to start User Service:", error);

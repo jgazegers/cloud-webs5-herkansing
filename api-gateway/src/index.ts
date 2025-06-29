@@ -6,6 +6,7 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import jwt from "jsonwebtoken";
 import { ServiceRegistry } from "./serviceRegistry";
 import { createLoadBalancedProxy } from "./loadBalancedProxy";
+import { specs, swaggerUi } from "./config/swagger";
 
 const app = express();
 
@@ -17,6 +18,9 @@ app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
 const PORT = process.env.PORT || 3000;
+
+// Swagger documentation setup
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Remove old hardcoded services - now managed by ServiceRegistry
 // const services = { ... }
@@ -99,6 +103,189 @@ app.use(
 // that communicate via RabbitMQ. They are not exposed through the API Gateway
 // as they are meant for internal processing, not external API access.
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Users
+ *     description: User management and authentication
+ *   - name: Competitions
+ *     description: Competition management
+ *   - name: Submissions
+ *     description: Submission management
+ *   - name: Health
+ *     description: Health check and monitoring
+ */
+
+/**
+ * @swagger
+ * /api/users/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserInput'
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid input
+ *       409:
+ *         description: Username already exists
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /api/users/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserInput'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /api/competitions:
+ *   post:
+ *     summary: Create a new competition
+ *     tags: [Competitions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title: { type: string }
+ *               description: { type: string }
+ *               endDate: { type: string, format: date-time }
+ *               targetImage: { type: string, format: binary }
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CompetitionInput'
+ *     responses:
+ *       201:
+ *         description: Competition created successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ *   get:
+ *     summary: Get all competitions
+ *     tags: [Competitions]
+ *     responses:
+ *       200:
+ *         description: List of competitions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalCompetitions: { type: integer }
+ *                 competitions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Competition'
+ */
+
+/**
+ * @swagger
+ * /api/submissions:
+ *   post:
+ *     summary: Create a new submission
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               competitionId: { type: string }
+ *               submissionData: { type: string, format: binary }
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SubmissionInput'
+ *     responses:
+ *       201:
+ *         description: Submission created successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: API Gateway health check
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: All services are healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
+ *       503:
+ *         description: Some services are degraded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
+ */
+
+/**
+ * @swagger
+ * /stats:
+ *   get:
+ *     summary: Load balancer statistics
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Load balancer statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoadBalancerStats'
+ */
+
 // Health check and statistics endpoints
 app.get("/health", (req, res) => {
   const stats = serviceRegistry.getAllStats();
@@ -147,5 +334,12 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`API Gateway is running on http://localhost:${PORT}`);
+  console.log(`🚀 API Gateway is running on http://localhost:${PORT}`);
+  console.log(`📚 API documentation: http://localhost:${PORT}/api-docs`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`📈 Load balancer stats: http://localhost:${PORT}/stats`);
+  console.log(`🌐 Available endpoints:`);
+  console.log(`   • Users: /api/users/*`);
+  console.log(`   • Competitions: /api/competitions/*`);
+  console.log(`   • Submissions: /api/submissions/*`);
 });

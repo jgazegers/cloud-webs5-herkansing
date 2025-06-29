@@ -6,6 +6,7 @@ import { connectDatabase, closeDatabase } from './config/database';
 import { MessageQueue } from './messageQueue';
 import { EventHandlers } from './services/eventHandlers';
 import { ImaggaService } from './services/imaggaService';
+import { specs, swaggerUi } from './config/swagger';
 
 const app = express();
 const PORT = process.env.PORT || 3004;
@@ -18,6 +19,36 @@ const imaggaService = new ImaggaService();
 // Basic middleware
 app.use(express.json());
 
+// Swagger documentation setup
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
+/**
+ * @swagger
+ * tags:
+ *   name: Image Comparison
+ *   description: Internal image analysis and comparison API
+ */
+
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [Image Comparison]
+ *     responses:
+ *       200:
+ *         description: Service is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/HealthCheck'
+ *                 - type: object
+ *                   properties:
+ *                     imaggaConfigured:
+ *                       type: boolean
+ *                       description: Whether Imagga API is configured
+ */
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -83,6 +114,7 @@ async function startServer() {
       console.log(`🚀 Image Comparison Service running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`📈 Stats: http://localhost:${PORT}/stats`);
+      console.log(`📚 API docs: http://localhost:${PORT}/api-docs`);
     });
     
   } catch (error) {

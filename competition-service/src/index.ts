@@ -6,6 +6,7 @@ import { MessageQueue } from "./messageQueue";
 import { connectToDatabase } from "./config/database";
 import { createCompetitionRoutes } from "./routes/competitionRoutes";
 import { WinnerEventHandler } from "./services/winnerEventHandler";
+import { specs, swaggerUi } from "./config/swagger";
 import "./types/express";
 
 const app = express();
@@ -47,6 +48,9 @@ async function initializeMessageQueue() {
 
 // Middleware
 app.use(express.json());
+
+// Swagger documentation setup
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -98,6 +102,7 @@ async function startServer(): Promise<void> {
       console.log(`   • Winner notification handling`);
       console.log(`   • Health checks and monitoring`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
+      console.log(`📚 API documentation: http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
     console.error("❌ Failed to start Competition Service:", error);
