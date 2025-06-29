@@ -39,11 +39,11 @@ services:
       - ./api-gateway/.env
       - .env
 
-  user-service:
+  user-service-1:
     build:
       context: ./user-service
       dockerfile: ../Dockerfile.dev
-    container_name: user-service
+    container_name: user-service-1
     ports:
       - "3001:3001"
     env_file:
@@ -58,11 +58,30 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  competition-service:
+  user-service-2:
+    build:
+      context: ./user-service
+      dockerfile: ../Dockerfile.dev
+    container_name: user-service-2
+    ports:
+      - "3011:3001"  # Map to different host port
+    env_file:
+      - ./user-service/.env
+      - .env
+    volumes:
+      - ./user-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  competition-service-1:
     build:
       context: ./competition-service
       dockerfile: ../Dockerfile.dev
-    container_name: competition-service
+    container_name: competition-service-1
     ports:
       - "3002:3002"
     env_file:
@@ -77,11 +96,30 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  submission-service:
+  competition-service-2:
+    build:
+      context: ./competition-service
+      dockerfile: ../Dockerfile.dev
+    container_name: competition-service-2
+    ports:
+      - "3012:3002"  # Map to different host port
+    env_file:
+      - ./competition-service/.env
+      - .env
+    volumes:
+      - ./competition-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  submission-service-1:
     build:
       context: ./submission-service
       dockerfile: ../Dockerfile.dev
-    container_name: submission-service
+    container_name: submission-service-1
     ports:
       - "3003:3003"
     env_file:
@@ -96,11 +134,30 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  image-comparison-service:
+  submission-service-2:
+    build:
+      context: ./submission-service
+      dockerfile: ../Dockerfile.dev
+    container_name: submission-service-2
+    ports:
+      - "3013:3003"  # Map to different host port
+    env_file:
+      - ./submission-service/.env
+      - .env
+    volumes:
+      - ./submission-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  image-comparison-service-1:
     build:
       context: ./image-comparison-service
       dockerfile: ../Dockerfile.dev
-    container_name: image-comparison-service
+    container_name: image-comparison-service-1
     ports:
       - "3004:3004"
     env_file:
@@ -115,13 +172,51 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  winner-service:
+  image-comparison-service-2:
+    build:
+      context: ./image-comparison-service
+      dockerfile: ../Dockerfile.dev
+    container_name: image-comparison-service-2
+    ports:
+      - "3014:3004"  # Map to different host port
+    env_file:
+      - ./image-comparison-service/.env
+      - .env
+    volumes:
+      - ./image-comparison-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  winner-service-1:
     build:
       context: ./winner-service
       dockerfile: ../Dockerfile.dev
-    container_name: winner-service
+    container_name: winner-service-1
     ports:
       - "3005:3005"
+    env_file:
+      - ./winner-service/.env
+      - .env
+    volumes:
+      - ./winner-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  winner-service-2:
+    build:
+      context: ./winner-service
+      dockerfile: ../Dockerfile.dev
+    container_name: winner-service-2
+    ports:
+      - "3015:3005"  # Map to different host port
     env_file:
       - ./winner-service/.env
       - .env

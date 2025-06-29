@@ -11,8 +11,6 @@ export class ComparisonEventHandler {
   async handleComparisonCompleted(event: ComparisonCompletedEvent): Promise<void> {
     try {
       console.log(`📥 Processing comparison completed event for submission: ${event.comparisonResult.submissionId}`);
-
-      console.log(event)
       
       if (event.comparisonResult.status === 'completed') {
         console.log(`✅ Image comparison completed with score: ${event.comparisonResult.score}%`);

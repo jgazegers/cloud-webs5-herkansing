@@ -132,6 +132,9 @@ export class MessageQueue {
       throw new Error('Not connected to RabbitMQ');
     }
 
+    // Ensure the competitions exchange exists before binding
+    await this.channel.assertExchange('competitions', 'topic', { durable: true });
+
     // Create a queue for the submission service
     const queueName = 'submission-service-competitions';
     await this.channel.assertQueue(queueName, { durable: true });
@@ -177,6 +180,9 @@ export class MessageQueue {
       throw new Error('Not connected to RabbitMQ');
     }
 
+    // Ensure the winners exchange exists before binding
+    await this.channel.assertExchange('winners', 'topic', { durable: true });
+
     // Create a queue for winner events
     const queueName = 'submission-service-winners';
     await this.channel.assertQueue(queueName, { durable: true });
@@ -207,6 +213,9 @@ export class MessageQueue {
       throw new Error('Not connected to RabbitMQ');
     }
 
+    // Ensure the submissions exchange exists before publishing
+    await this.channel.assertExchange('submissions', 'topic', { durable: true });
+
     const routingKey = 'submission.created';
     const message = Buffer.from(JSON.stringify(event));
 
@@ -223,6 +232,9 @@ export class MessageQueue {
       throw new Error('Not connected to RabbitMQ');
     }
 
+    // Ensure the submissions exchange exists before publishing
+    await this.channel.assertExchange('submissions', 'topic', { durable: true });
+
     const routingKey = 'submission.deleted';
     const message = Buffer.from(JSON.stringify(event));
 
@@ -238,6 +250,9 @@ export class MessageQueue {
     if (!this.channel) {
       throw new Error('Not connected to RabbitMQ');
     }
+
+    // Ensure the comparisons exchange exists before binding
+    await this.channel.assertExchange('comparisons', 'topic', { durable: true });
 
     // Create a queue for the submission service to receive comparison events
     const queueName = 'submission-service-comparisons';

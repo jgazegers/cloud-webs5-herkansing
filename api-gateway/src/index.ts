@@ -1,8 +1,13 @@
 import express from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import jwt from "jsonwebtoken";
+import { ServiceRegistry } from "./serviceRegistry";
+import { createLoadBalancedProxy } from "./loadBalancedProxy";
 
 const app = express();
+
+// Initialize service registry with load balancers and circuit breakers
+const serviceRegistry = new ServiceRegistry();
 
 // Increase payload limit for base64 images (20MB)
 app.use(express.json({ limit: "20mb" }));
@@ -10,16 +15,11 @@ app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
 const PORT = 3000;
 
-const services = {
-  users: "http://user-service:3001",
-  competitions: "http://competition-service:3002",
-  submissions: "http://submission-service:3003",
-};
+// Remove old hardcoded services - now managed by ServiceRegistry
+// const services = { ... }
 
-const onErrorHandle = (err: any, req: any, res: any) => {
-  console.error("Proxy error:", err);
-  res.status(500).send("Proxy error");
-};
+// Remove old error handler - now handled by load balancer
+// const onErrorHandle = (err: any, req: any, res: any) => { ... }
 
 // JWT token exchange middleware for competition service
 const jwtTokenExchange = (req: any, res: any, next: any) => {
@@ -57,82 +57,87 @@ const jwtTokenExchange = (req: any, res: any, next: any) => {
   }
 };
 
+// User service proxy with load balancing
 app.use(
   "/api/users",
-  createProxyMiddleware({
-    target: services.users,
-    changeOrigin: true,
+  createLoadBalancedProxy(serviceRegistry, {
+    serviceName: 'users',
     pathRewrite: {
       "^/api/users": "/",
     },
-    // Configure proxy to handle larger payloads
-    on: {
-      error: onErrorHandle,
-      proxyReq: (proxyReq, req, res) => {
-        // Ensure proper headers are set for large payloads
-        if (req.headers['content-length']) {
-          proxyReq.setHeader('content-length', req.headers['content-length']);
-        }
-        // Handle JSON payloads properly for large requests
-        if (req.body && typeof req.body === 'object') {
-          const bodyData = JSON.stringify(req.body);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-          proxyReq.write(bodyData);
-        }
-      },
-    },
   })
 );
 
-// Competition service proxy with JWT token exchange
+// Competition service proxy with JWT token exchange and load balancing
 app.use(
   "/api/competitions",
   jwtTokenExchange, // First validate external token and exchange for internal token
-  createProxyMiddleware({
-    target: services.competitions,
-    changeOrigin: true,
+  createLoadBalancedProxy(serviceRegistry, {
+    serviceName: 'competitions',
     pathRewrite: {
       "^/api/competitions": "/",
-    },
-    on: {
-      error: onErrorHandle,
-      proxyReq: (proxyReq, req, res) => {
-        // Handle large file uploads and form data
-        if (req.headers['content-length']) {
-          proxyReq.setHeader('content-length', req.headers['content-length']);
-        }
-        if (req.headers['content-type']) {
-          proxyReq.setHeader('content-type', req.headers['content-type']);
-        }
-      },
     },
   })
 );
 
+// Submission service proxy with JWT token exchange and load balancing
 app.use(
   "/api/submissions",
   jwtTokenExchange, // First validate external token and exchange for internal token
-  createProxyMiddleware({
-    target: services.submissions,
-    changeOrigin: true,
+  createLoadBalancedProxy(serviceRegistry, {
+    serviceName: 'submissions',
     pathRewrite: {
       "^/api/submissions": "/",
     },
-    on: {
-      error: onErrorHandle,
-      proxyReq: (proxyReq, req, res) => {
-        // Handle large file uploads and form data
-        if (req.headers['content-length']) {
-          proxyReq.setHeader('content-length', req.headers['content-length']);
-        }
-        if (req.headers['content-type']) {
-          proxyReq.setHeader('content-type', req.headers['content-type']);
-        }
-      },
-    },
   })
 );
+
+// Note: Image comparison and winner services are internal services
+// that communicate via RabbitMQ. They are not exposed through the API Gateway
+// as they are meant for internal processing, not external API access.
+
+// Health check and statistics endpoints
+app.get("/health", (req, res) => {
+  const stats = serviceRegistry.getAllStats();
+  const totalServices = Object.keys(stats).length;
+  const healthyServices = Object.values(stats).filter(
+    (service: any) => service.summary.availableInstances > 0
+  ).length;
+
+  res.status(healthyServices === totalServices ? 200 : 503).json({
+    status: healthyServices === totalServices ? "healthy" : "degraded",
+    timestamp: new Date().toISOString(),
+    services: {
+      total: totalServices,
+      healthy: healthyServices,
+      degraded: totalServices - healthyServices
+    },
+    details: stats
+  });
+});
+
+app.get("/stats", (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    loadBalancer: serviceRegistry.getAllStats()
+  });
+});
+
+app.get("/stats/:serviceName", (req, res) => {
+  const serviceName = req.params.serviceName;
+  const stats = serviceRegistry.getServiceStats(serviceName);
+  
+  if (!stats) {
+    res.status(404).json({ error: `Service ${serviceName} not found` });
+    return;
+  }
+
+  res.json({
+    service: serviceName,
+    timestamp: new Date().toISOString(),
+    ...stats
+  });
+});
 
 app.get("/", (req, res) => {
   res.send("API Gateway is running");
